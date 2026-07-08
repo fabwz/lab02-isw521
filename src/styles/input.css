@@ -12,12 +12,21 @@
   position: fixed;
   inset: 0;
   z-index: -10;
+  /* El tamaño de la elipse usa clamp() en vez de px fijo: el propio
+     DESIGN.md pide "900x700px o mayor en pantallas grandes" para que el
+     glow siga siendo dominante y no un blob pequeño en monitores anchos
+     (900x700px fijo se ve minúsculo en un viewport de 1920px, que es lo
+     que probablemente estabas viendo). El piso de 900px/700px se mantiene
+     igual que el spec en viewports chicos. Dos capas: el radial-gradient es
+     el glow animado (se mueve con --glow-x/--glow-y), el linear-gradient es
+     la base tonal estática debajo. Solo violeta en el glow — el magenta se
+     reserva para elementos de acento (botones), nunca para el fondo. */
   background:
-    radial-gradient(ellipse 900px 700px at var(--glow-x, 50%) var(--glow-y, 20%),
+    radial-gradient(ellipse clamp(900px, 70vw, 1400px) clamp(700px, 60vh, 1100px) at var(--glow-x, 50%) var(--glow-y, 20%),
       rgba(124, 58, 237, 0.55) 0%,
-      rgba(236, 72, 153, 0.25) 35%,
-      rgba(8, 8, 13, 0) 70%),
-    #08080D;
+      rgba(124, 58, 237, 0.18) 40%,
+      rgba(8, 8, 13, 0) 75%),
+    linear-gradient(180deg, #270C46 0%, #0F031C 55%, #110121 100%);
   animation: glowDrift 22s ease-in-out infinite alternate;
 }
 

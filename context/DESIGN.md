@@ -40,10 +40,13 @@ El elemento firma del sistema (heredado del concepto de itinerario) es la **tarj
 
 ### Fondo animado (ambient gradient) — referencia: Draftea
 
-El fondo NO son varios blobs sutiles y pequeños: es **un glow radial morado dominante**, similar al de la app Draftea (ver referencia visual), que:
-- Cubre **toda la ventana** (no solo la parte superior), aunque su punto de mayor intensidad puede estar desplazado.
-- Nace intenso en tonos **Violet/Magenta** y se desvanece hacia **Void** en los bordes/esquinas — nunca un morado plano de pared a pared.
-- **Se mueve lentamente** (posición y/o tamaño) en bucle continuo, dando sensación de "vivo" sin llamar la atención sobre el contenido.
+El fondo NO son varios blobs sutiles y pequeños, ni un glow radial solo: son **dos capas superpuestas**:
+1. **Capa 1 — glow animado** (arriba): radial **solo en violeta** que se mueve lentamente, sin magenta.
+2. **Capa 2 — degradado estático** (debajo): un `linear-gradient` vertical de violeta oscuro a casi-negro, que actúa como base tonal de todo el lienzo.
+
+**El magenta nunca aparece en el fondo ambiental** — se reserva exclusivamente para elementos de acento (botones con `--gradient-accent`, bordes en hover, texto con degradado). El fondo, de punta a punta, es una escala de violeta a negro.
+
+> **Nota técnica — por qué se necesitan las dos capas:** en un `radial-gradient`, los porcentajes de los stops son fracciones del **radio**, pero el área visual cubierta crece con el radio al cuadrado — un stop al `40%` del radio ya cubre `~84%` del área. Por eso el violeta se atenúa progresivamente (`0.55` → `0.18`) en vez de cortar abrupto, y la **capa 2** aporta la base tonal violeta oscuro para que el centro del glow nunca se vea "flotando sobre negro puro" de forma abrupta.
 
 ```css
 .ambient-glow {
@@ -51,11 +54,14 @@ El fondo NO son varios blobs sutiles y pequeños: es **un glow radial morado dom
   inset: 0;
   z-index: -10;
   background:
-    radial-gradient(ellipse 900px 700px at var(--glow-x, 50%) var(--glow-y, 20%),
+    /* Capa 1: glow animado — solo violeta, sin magenta (el magenta se reserva
+       para elementos de acento como botones, nunca para el fondo ambiental) */
+    radial-gradient(ellipse clamp(900px, 70vw, 1400px) clamp(700px, 60vh, 1100px) at var(--glow-x, 50%) var(--glow-y, 20%),
       rgba(124, 58, 237, 0.55) 0%,
-      rgba(236, 72, 153, 0.25) 35%,
-      rgba(8, 8, 13, 0) 70%),
-    #08080D; /* Void como base sólida detrás del glow */
+      rgba(124, 58, 237, 0.18) 40%,
+      rgba(8, 8, 13, 0) 75%),
+    /* Capa 2: degradado estático, base tonal violeta oscuro → casi negro */
+    linear-gradient(180deg, #270C46 0%, #0F031C 55%, #110121 100%);
   animation: glowDrift 22s ease-in-out infinite alternate;
 }
 
@@ -66,7 +72,7 @@ El fondo NO son varios blobs sutiles y pequeños: es **un glow radial morado dom
 }
 ```
 
-- El glow principal usa `ellipse` grande (aprox. 900×700px o mayor en pantallas grandes) para que domine la composición, tal como en Draftea (donde el morado ocupa buena parte de la parte superior y se diluye hacia abajo).
+- El glow principal (capa 1) usa `ellipse` grande para que domine la composición, tal como en Draftea (donde el morado ocupa buena parte de la parte superior y se diluye hacia abajo).
 - Opcionalmente, 1–2 glows secundarios más pequeños y tenues (`opacity` 10–15%) pueden añadirse en otras zonas para dar profundidad, pero el glow principal es siempre el protagonista — no reemplazarlo por múltiples blobs de intensidad pareja.
 - El contenido (navbar, tarjetas) sigue viviendo sobre `Glass Surface`/`Void`, nunca directamente expuesto sobre el punto más intenso del glow sin una superficie de por medio (por contraste).
 
