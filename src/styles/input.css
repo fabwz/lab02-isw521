@@ -1,0 +1,30 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  .glass {
+    @apply bg-white/[0.06] backdrop-blur-glass border border-white/[0.14] shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_8px_32px_rgba(0,0,0,0.35)];
+  }
+}
+
+.ambient-glow {
+  position: fixed;
+  inset: 0;
+  z-index: -10;
+  background:
+    radial-gradient(ellipse 900px 700px at var(--glow-x, 50%) var(--glow-y, 20%),
+      rgba(124, 58, 237, 0.55) 0%,
+      rgba(236, 72, 153, 0.25) 35%,
+      rgba(8, 8, 13, 0) 70%),
+    #08080D;
+  animation: glowDrift 22s ease-in-out infinite alternate;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ambient-glow {
+    animation: none;
+    --glow-x: 50%;
+    --glow-y: 20%;
+  }
+}
