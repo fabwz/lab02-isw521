@@ -28,3 +28,22 @@ export const clearAuth = () => {
 export const getToken = () => authToken;
 export const getUser = () => authUser;
 export const isAuthenticated = () => Boolean(authToken);
+
+// Caché por endpoint (RF-10): última respuesta exitosa de cada endpoint de
+// datos (teams/games/stadiums), guardada junto a su timestamp para poder
+// mostrar el indicador "Datos no actualizados · hh:mm" cuando se usa.
+const cacheStorageKey = (endpointName) => `cache:${endpointName}`;
+
+// setCachedData: se llama tras cada respuesta 200 de un endpoint de datos.
+export const setCachedData = (endpointName, data) => {
+  const entrada = { data, timestamp: Date.now() };
+  localStorage.setItem(cacheStorageKey(endpointName), JSON.stringify(entrada));
+};
+
+// getCachedData: devuelve { data, timestamp } o null si nunca se guardó nada
+// para ese endpoint. Se consulta solo cuando la petición en vivo falla.
+export const getCachedData = (endpointName) => {
+  const crudo = localStorage.getItem(cacheStorageKey(endpointName));
+  if (!crudo) return null;
+  return JSON.parse(crudo);
+};

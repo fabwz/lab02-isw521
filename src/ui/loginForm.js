@@ -23,10 +23,19 @@ const mensajeError = (error) => {
 // renderLoginForm: dibuja SOLO la tarjeta glass (título + inputs + botón).
 // Es el componente que se reutiliza tal cual dentro del modal de sesión
 // expirada (RF-08) — ese modal solo cambia el contenedor que lo envuelve.
+// `alertMessage` (usado por sessionExpiredModal.js) agrega el aviso rojo
+// COMO PARTE de esta misma tarjeta (borde superior de acento + texto arriba
+// del título) en vez de que el llamador apile una tarjeta glass aparte encima
+// — dos superficies glass independientes se veían como un corte/costura entre
+// ambas (doble blur/borde/sombra). Con un solo `<form class="glass ...">` no
+// hay seam posible: es una única tarjeta de principio a fin.
 // onSuccess(user) se invoca después de guardar token/user en appState.
-export const renderLoginForm = (container, { onSuccess, subtitle } = {}) => {
+export const renderLoginForm = (container, { onSuccess, subtitle, alertMessage } = {}) => {
+  const clasesBorde = alertMessage ? 'border-t-2 border-t-alert' : '';
+
   container.innerHTML = `
-    <form class="glass rounded-3xl p-8 w-full max-w-[380px] flex flex-col gap-5" novalidate>
+    <form class="glass rounded-3xl p-8 w-full max-w-[380px] flex flex-col gap-5 ${clasesBorde}" novalidate>
+      ${alertMessage ? `<p class="body-sm text-alert font-semibold text-center -mb-1">${alertMessage}</p>` : ''}
       <div>
         <p class="body-sm text-text-secondary mb-1">Ruta del Campeón</p>
         <h1 class="font-display text-[26px] leading-[30px] font-bold text-white">Iniciar sesión</h1>

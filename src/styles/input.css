@@ -79,3 +79,58 @@
     animation: none;
   }
 }
+
+/* Banners de resiliencia (RF-09/RF-10) y modal de sesión expirada (RF-08):
+   misma aparición suave que el resto del sistema (DESIGN.md sección 6). */
+@keyframes bannerEnter {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.banner-enter {
+  animation: bannerEnter 200ms ease-out both;
+}
+
+@keyframes modalEnter {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.modal-enter {
+  animation: modalEnter 150ms ease-out both;
+}
+
+/* Punto parpadeante del badge de caché (RF-10) — lento, nunca abrupto. */
+@keyframes pulseSlow {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.animate-pulse-slow {
+  animation: pulseSlow 2.5s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .banner-enter,
+  .modal-enter,
+  .animate-pulse-slow {
+    animation: none;
+  }
+}
