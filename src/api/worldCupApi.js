@@ -127,7 +127,7 @@ export const getStadiums = async () => fetchDatasetResiliente('stadiums', '/get/
 // real (fetchDatasetResiliente arriba), solo que `peticionFalsa` reemplaza a
 // `authFetch` como la función que "falla". La diferencia clave con la versión
 // anterior: `peticionFalsa` YA NO lanza `new ApiError(status, mensaje)`
-// sintético en memoria — hace un fetch() REAL a httpstat.us/<status>
+// sintético en memoria — hace un fetch() REAL a /dev-mock/<status>
 // (fetchSimulatedError, httpClient.js) y deja que el mismo
 // `clasificarRespuesta` de producción construya el ApiError a partir de esa
 // respuesta HTTP real. Eso significa que la pestaña Network SÍ muestra una
@@ -135,13 +135,13 @@ export const getStadiums = async () => fetchDatasetResiliente('stadiums', '/get/
 // explícito de la rúbica (RNF-04) que un `throw` en memoria no cumplía. El
 // countdown/barra y los reintentos con backoff creciente (1s→2s→4s→8s) son
 // 100% el código de producción — lo único "de dev" es que el servidor detrás
-// del fetch es httpstat.us en vez de worldcup26.ir.
+// del fetch es dev-mock (Vite, local) en vez de worldcup26.ir.
 //
 // `failCount` controla cuántos intentos fallan antes de resolver:
 // - Infinity (default): nunca se recupera, agota los 4 reintentos y cae a
 //   caché — es el caso "el servidor sigue caído".
 // - un número finito (ej. 2): falla esa cantidad de veces y el siguiente
-//   intento hace un fetch real a httpstat.us/200 (fetchSimulatedSuccess) —
+//   intento hace un fetch real a /dev-mock/200 (fetchSimulatedSuccess) —
 //   es el caso "el servidor se recupera a mitad del backoff", con los
 //   banners desapareciendo limpiamente sin pasar por caché.
 //
@@ -165,12 +165,12 @@ const simulateApiError = async (status, datasetCacheKey, { failCount = Infinity 
   const peticionFalsa = async () => {
     intentosHechos += 1;
     if (intentosHechos <= failCount) {
-      // Fetch real a httpstat.us/<status> — aparece en Network con status,
+      // Fetch real a /dev-mock/<status> — aparece en Network con status,
       // headers y body reales. clasificarRespuesta (httpClient.js) construye
       // el ApiError real a partir de esa Response, no uno sintético.
       return await fetchSimulatedError(status);
     }
-    // Recuperación simulada: fetch real a httpstat.us/200 (también visible
+    // Recuperación simulada: fetch real a /dev-mock/200 (también visible
     // en Network) — no hay dataset nuevo real que aplicar, la app sigue
     // mostrando lo que ya tenía cargado; esto solo demuestra que el backoff
     // puede terminar en éxito.
@@ -216,7 +216,7 @@ export const simulateRateLimit = (cacheKey = 'teams') => simulateApiError(429, c
 
 // simulateRateLimitRecovery: SOLO DESARROLLO. Misma mecánica que
 // simulateRateLimit, pero falla solo los primeros 2 intentos (fetch real a
-// httpstat.us/429) y el 3ro hace un fetch real a httpstat.us/200 — para
+// /dev-mock/429) y el 3ro hace un fetch real a /dev-mock/200 — para
 // demostrar el caso donde el backoff SÍ se recupera (countdown 1s → 2s,
 // banner desaparece, la app sigue con datos en vivo) en vez de terminar
 // siempre cayendo a caché.
@@ -232,8 +232,45 @@ export const simulateRateLimitRecovery = (cacheKey = 'teams') => simulateApiErro
 // mountDevServerErrorSimulator y la línea que lo monta en main.js.
 export const simulateServerError = (cacheKey = 'teams') => simulateApiError(500, cacheKey);
 
+// simulateStadiumsFailureAfterRender: SOLO DESARROLLO. Reto de resiliencia
+// específico del subproyecto (RF-11 / CLAUDE.md 5.5): si `/get/stadiums`
+// falla DESPUÉS de que el itinerario ya se renderizó con partidos reales
+// (`/get/games`), las tarjetas no deben desaparecer ni re-renderizarse
+// completas — solo el campo de estadio de las afectadas. Para demostrarlo en
+// vivo se necesita poder forzar ese fallo aislado bajo demanda, en un momento
+// posterior al render inicial (no al cargar la app) — igual que los otros
+// simuladores dev-only, se hace con un fetch() REAL a /dev-mock/500
+// (fetchSimulatedError, httpClient.js), visible en Network con status real,
+// para que también pase por el backoff de producción (conBackoffVisible).
+//
+// A diferencia de `simulateServerError`, esta función SIEMPRE propaga el
+// error al llamador (main.js) en vez de tragárselo — el llamador es quien
+// decide aplicar la actualización parcial (markStadiumsUnavailableForCards)
+// sobre las tarjetas ya en pantalla; no cae a caché aquí porque el punto de
+// la demo es mostrar el estado "Estadio no disponible", no el badge de
+// caché (ese es el camino de RF-10, ya cubierto por fetchDatasetResiliente).
+// `/get/games` y `/get/teams` NO se vuelven a pedir en ningún punto de este
+// flujo — los partidos ya renderizados sencillamente se quedan como están.
+//
+// Para quitarlo antes de la entrega final: borra esta función, el import de
+// mountDevStadiumsFailureSimulator y las líneas que lo montan en main.js.
+export const simulateStadiumsFailureAfterRender = async () => {
+  if (!import.meta.env.DEV) return;
+  try {
+    await conBackoffVisible('stadiums', () => fetchSimulatedError(500));
+  } catch (error) {
+    hideRateLimitBanner('stadiums');
+    hideServerErrorBanner('stadiums');
+    console.debug('[resiliencia][DEV] simulación RF-11 — /get/stadiums falló tras el render inicial', {
+      nombre: error.name,
+      status: error.status,
+    });
+    throw error;
+  }
+};
+
 // simulateSessionExpired: SOLO DESARROLLO. Igual que los anteriores, hace un
-// fetch() REAL a httpstat.us/401 (fetchSimulatedError) y deja que el mismo
+// fetch() REAL a /dev-mock/401 (fetchSimulatedError) y deja que el mismo
 // clasificarRespuesta de producción construya el ApiError(401) real a partir
 // de esa respuesta — visible en Network con status/headers/body reales, en
 // vez de que main.js llame a manejarSesionExpirada() directamente sin

@@ -122,36 +122,44 @@ export const publicFetch = async (path, body) => {
 };
 
 // fetchSimulatedError / fetchSimulatedSuccess: SOLO DESARROLLO, usadas por
-// los simuladores dev-only de worldCupApi.js (401/429/500). La rúbrica exige
-// poder mostrar en la pestaña Network un código de estado, encabezados y
-// cuerpo REALES — un ApiError construido en memoria con `new ApiError(...)`
+// los simuladores dev-only de worldCupApi.js (401/429/500/RF-11). La rúbrica
+// exige poder mostrar en la pestaña Network un código de estado, encabezados
+// y cuerpo REALES — un ApiError construido en memoria con `new ApiError(...)`
 // no genera ninguna entrada en Network. Estas funciones hacen un fetch()
-// real a httpstat.us/<status> (servicio público que devuelve exactamente el
-// código HTTP pedido) y lo pasan por el MISMO `clasificarRespuesta` que
-// clasifica cualquier respuesta real de la API — el ApiError resultante sale
-// de una Response real, no de un atajo sintético.
-const HTTPSTATUS_BASE_URL = 'https://httpstat.us';
+// real a /dev-mock/<status> (middleware del propio dev server de Vite, ver
+// vite.config.js) y lo pasan por el MISMO `clasificarRespuesta` que clasifica
+// cualquier respuesta real de la API — el ApiError resultante sale de una
+// Response real, no de un atajo sintético.
+//
+// Antes usaba httpstat.us (servicio público externo): resultó poco confiable
+// en pruebas reales (ERR_EMPTY_RESPONSE intermitente) — un riesgo directo el
+// día de la defensa si la petición externa falla por su cuenta justo cuando
+// se necesita mostrar el error. /dev-mock/* nunca sale a internet, así que no
+// depende de la disponibilidad de un tercero. Ruta relativa (mismo origen):
+// solo responde dentro del proceso del dev server (`npm run dev`), no existe
+// en el build de producción.
+const DEV_MOCK_BASE_URL = '/dev-mock';
 
 // fetchSimulatedError: dispara clasificarRespuesta contra una respuesta HTTP
 // real con el `status` pedido (401/429/500) — para esos códigos, siempre
 // lanza ApiError, igual que ante el mismo status viniendo de la API real.
 export const fetchSimulatedError = async (status) => {
-  const respuesta = await fetchConTimeout(`${HTTPSTATUS_BASE_URL}/${status}`, {
+  const respuesta = await fetchConTimeout(`${DEV_MOCK_BASE_URL}/${status}`, {
     headers: { Accept: 'application/json' },
   });
   return clasificarRespuesta(respuesta, {
-    401: `Simulado (dev): 401 real desde ${HTTPSTATUS_BASE_URL}`,
-    default: `Simulado (dev): ${status} real desde ${HTTPSTATUS_BASE_URL}`,
+    401: `Simulado (dev): 401 real desde ${DEV_MOCK_BASE_URL}`,
+    default: `Simulado (dev): ${status} real desde ${DEV_MOCK_BASE_URL}`,
   });
 };
 
 // fetchSimulatedSuccess: para el caso "el backoff se recupera" (ver
-// simulateRateLimitRecovery). httpstat.us/200 devuelve texto plano ("200
-// OK"), no JSON — por eso NO pasa por clasificarRespuesta (que intenta
-// `.json()` en el camino de éxito y fallaría al parsear); aquí solo importa
-// que la petición real complete con 2xx, visible igual en Network.
+// simulateRateLimitRecovery). No pasa por clasificarRespuesta (que intenta
+// `.json()` en el camino de éxito y espera la forma de un dataset real);
+// aquí solo importa que la petición real complete con 2xx, visible igual en
+// Network.
 export const fetchSimulatedSuccess = async () => {
-  const respuesta = await fetchConTimeout(`${HTTPSTATUS_BASE_URL}/200`, {
+  const respuesta = await fetchConTimeout(`${DEV_MOCK_BASE_URL}/200`, {
     headers: { Accept: 'application/json' },
   });
   if (!respuesta.ok) {

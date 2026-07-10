@@ -3,11 +3,12 @@ import { ApiError } from './api/httpClient.js';
 import { renderLoginScreen } from './ui/loginForm.js';
 import { renderNavbar } from './ui/navbar.js';
 import { renderTeamSelector } from './ui/teamSelector.js';
-import { renderItineraryCards } from './ui/itineraryCards.js';
+import { renderItineraryCards, markStadiumsUnavailableForCards } from './ui/itineraryCards.js';
 import { showSessionExpiredModal } from './ui/sessionExpiredModal.js';
 import { mountDevSessionSimulator } from './ui/devSessionSimulator.js';
 import { mountDevRateLimitSimulator } from './ui/devRateLimitSimulator.js';
 import { mountDevServerErrorSimulator } from './ui/devServerErrorSimulator.js';
+import { mountDevStadiumsFailureSimulator } from './ui/devStadiumsFailureSimulator.js';
 import {
   getTeams,
   getGames,
@@ -15,6 +16,7 @@ import {
   simulateRateLimit,
   simulateRateLimitRecovery,
   simulateServerError,
+  simulateStadiumsFailureAfterRender,
   simulateSessionExpired,
 } from './api/worldCupApi.js';
 import { buildItinerary } from './domain/itineraryService.js';
@@ -59,6 +61,29 @@ mountDevRateLimitSimulator(
 // banner "Error de servidor · reintentando conexión..." con barra de
 // progreso (RF-09) — ver devServerErrorSimulator.js / simulateServerError.
 mountDevServerErrorSimulator(() => simulateServerError('teams'));
+
+// currentMatchIds: ids de las tarjetas de partidos actualmente en pantalla
+// (poblado por onTeamSelected). El simulador de RF-11 lo necesita para saber
+// a qué tarjetas aplicarles la actualización parcial — no dispara ninguna
+// petición nueva a /get/games, solo lee este arreglo en memoria.
+let currentMatchIds = [];
+
+// Botón/atajo visible solo en `npm run dev` para forzar el reto de
+// resiliencia específico de este subproyecto (RF-11): falla SOLO
+// `/get/stadiums` después de que el itinerario ya está renderizado con datos
+// reales de /get/games y /get/teams. Si no hay itinerario en pantalla, no
+// hace nada (no tiene sentido demostrarlo sin tarjetas ya renderizadas).
+mountDevStadiumsFailureSimulator(async () => {
+  if (currentMatchIds.length === 0) return;
+  try {
+    await simulateStadiumsFailureAfterRender();
+  } catch (error) {
+    // Fallo aislado y esperado (RF-11): actualización PARCIAL por tarjeta,
+    // nunca un re-render completo de itinerary-slot — las tarjetas ya
+    // renderizadas permanecen intactas salvo el bloque de estadio.
+    markStadiumsUnavailableForCards(app.querySelector('#itinerary-slot'), currentMatchIds);
+  }
+});
 
 // iniciarApp: monta la navbar y la vista Itinerarios (selector de equipo +
 // tarjetas). teams/games se piden juntos porque el selector no puede
@@ -128,6 +153,7 @@ const iniciarApp = async () => {
     onTeamSelected: (selectedTeamId) => {
       const equipoSeleccionado = teams.find((team) => team.id === selectedTeamId);
       const itinerario = buildItinerary(selectedTeamId, teams, games, stadiums);
+      currentMatchIds = itinerario.matches.map((match) => match.id);
       renderItineraryCards(itinerarySlot, equipoSeleccionado.name_en, equipoSeleccionado.flag, itinerario);
     },
   });

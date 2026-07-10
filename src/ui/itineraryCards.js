@@ -49,6 +49,7 @@ const renderCardHtml = (match, indice) => `
   <article
     class="card-enter relative overflow-hidden glass rounded-[20px] pl-6 pr-5 py-5 flex flex-col gap-3"
     style="animation-delay: ${indice * 40}ms"
+    data-match-id="${match.id}"
   >
     <span class="absolute inset-y-0 left-0 w-[3px] bg-gradient-to-b from-violet to-magenta"></span>
 
@@ -61,7 +62,7 @@ const renderCardHtml = (match, indice) => `
 
     <div class="font-mono text-[15px] leading-5 flex flex-col gap-2">
       <p class="flex items-center gap-2 text-white"><span class="text-text-secondary">${ICON_CALENDAR}</span>${match.localDate}</p>
-      ${renderStadiumFieldsHtml(match.stadium)}
+      <div data-stadium-fields>${renderStadiumFieldsHtml(match.stadium)}</div>
     </div>
   </article>
 `;
@@ -79,4 +80,22 @@ const renderStadiumFieldsHtml = (stadium) => {
     <p class="flex items-center gap-2 text-text-secondary"><span>${ICON_MAP_PIN}</span>${stadium.cityCountry}</p>
     <p class="flex items-center gap-2 text-white"><span class="text-text-secondary">${ICON_USERS}</span>${stadium.capacity.toLocaleString()}</p>
   `;
+};
+
+// markStadiumsUnavailableForCards: actualización PARCIAL por tarjeta (RF-11 /
+// CLAUDE.md 5.5). Cuando `/get/stadiums` falla después de que el itinerario
+// ya se renderizó con partidos reales, esta función reemplaza únicamente el
+// bloque `[data-stadium-fields]` (estadio + ciudad/país) de las tarjetas
+// afectadas por el estado degradado "Estadio no disponible" — nunca vuelve a
+// tocar `container.innerHTML` completo, así que el resto de cada tarjeta
+// (equipos, fecha, grupo, borde de degradado) permanece intacto y ninguna
+// tarjeta ya renderizada desaparece o se reordena.
+export const markStadiumsUnavailableForCards = (container, matchIds) => {
+  matchIds.forEach((matchId) => {
+    const tarjeta = container.querySelector(`article[data-match-id="${matchId}"]`);
+    const camposEstadio = tarjeta?.querySelector('[data-stadium-fields]');
+    if (camposEstadio) {
+      camposEstadio.innerHTML = renderStadiumFieldsHtml(null);
+    }
+  });
 };
