@@ -1,6 +1,5 @@
-import { login } from '../api/authApi.js';
+import { login } from '../domain/authService.js';
 import { ApiError } from '../api/httpClient.js';
-import { setAuth } from '../state/appState.js';
 
 // Traduce el status HTTP a un mensaje de error para el usuario, sin jerga
 // técnica ("token", "JWT", etc. quedan fuera de la UI).
@@ -91,8 +90,7 @@ export const renderLoginForm = (container, { onSuccess, subtitle, alertMessage }
     botonEntrar.textContent = 'Ingresando...';
 
     try {
-      const { user, token } = await login(campoEmail.value, campoPassword.value);
-      setAuth(token, user);
+      const user = await login(campoEmail.value, campoPassword.value);
       onSuccess?.(user);
     } catch (error) {
       mostrarError(mensajeError(error));

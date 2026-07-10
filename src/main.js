@@ -7,6 +7,14 @@ import { renderItineraryCards, markStadiumsUnavailableForCards } from './ui/itin
 import { showSessionExpiredModal } from './ui/sessionExpiredModal.js';
 import { mountDevToolsPanel } from './ui/devToolsPanel.js';
 import {
+  showRateLimitBanner,
+  hideRateLimitBanner,
+  showServerErrorBanner,
+  hideServerErrorBanner,
+  showCacheBanner,
+  hideCacheBanner,
+} from './ui/resilienceBanners.js';
+import {
   getTeams,
   getGames,
   getStadiums,
@@ -17,6 +25,17 @@ import {
   simulateSessionExpired,
 } from './api/worldCupApi.js';
 import { buildItinerary } from './domain/itineraryService.js';
+
+// worldCupApi.js no conoce la UI: main.js inyecta estos callbacks (RF-09/RF-10)
+// en cada llamada a getTeams/getGames/getStadiums/simulate* — ver worldCupApi.js.
+const banners = {
+  showRateLimitBanner,
+  hideRateLimitBanner,
+  showServerErrorBanner,
+  hideServerErrorBanner,
+  showCacheBanner,
+  hideCacheBanner,
+};
 
 const app = document.querySelector('#app');
 
@@ -38,13 +57,13 @@ mountDevToolsPanel({
     await simulateSessionExpired();
     manejarSesionExpirada();
   },
-  trigger429Agota: () => simulateRateLimit('teams'),
-  trigger429Recupera: () => simulateRateLimitRecovery('teams'),
-  trigger500: () => simulateServerError('teams'),
+  trigger429Agota: () => simulateRateLimit('teams', banners),
+  trigger429Recupera: () => simulateRateLimitRecovery('teams', banners),
+  trigger500: () => simulateServerError('teams', banners),
   triggerFalloEstadios: async () => {
     if (currentMatchIds.length === 0) return;
     try {
-      await simulateStadiumsFailureAfterRender();
+      await simulateStadiumsFailureAfterRender(banners);
     } catch (error) {
       markStadiumsUnavailableForCards(app.querySelector('#itinerary-slot'), currentMatchIds);
     }
@@ -69,7 +88,7 @@ const iniciarApp = async () => {
   let games;
 
   try {
-    [teams, games] = await Promise.all([getTeams(), getGames()]);
+    [teams, games] = await Promise.all([getTeams(banners), getGames(banners)]);
   } catch (error) {
     if (error instanceof ApiError && error.status === 401) {
       manejarSesionExpirada();
@@ -92,7 +111,7 @@ const iniciarApp = async () => {
   // RF-11: si stadiums falla sin caché, seguimos con array vacío (itineraryService contempla stadium: null).
   let stadiums = [];
   try {
-    stadiums = await getStadiums();
+    stadiums = await getStadiums(banners);
   } catch (error) {
     if (error instanceof ApiError && error.status === 401) {
       manejarSesionExpirada();
