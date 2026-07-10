@@ -50,7 +50,7 @@ export const renderLoginForm = (container, { onSuccess, subtitle, alertMessage }
           required
           autocomplete="email"
           placeholder="tu@correo.com"
-          class="bg-white/[0.04] border border-white/[0.14] rounded-xl px-4 py-3 text-white placeholder:text-text-secondary/60 outline-none focus:ring-2 focus:ring-magenta transition"
+          class="bg-white/[0.04] border border-white/[0.14] rounded-xl px-4 py-3 text-white placeholder:text-text-secondary/60 outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-magenta focus-visible:outline-offset-2 transition"
         />
       </label>
 
@@ -62,7 +62,7 @@ export const renderLoginForm = (container, { onSuccess, subtitle, alertMessage }
           required
           autocomplete="current-password"
           placeholder="••••••••"
-          class="bg-white/[0.04] border border-white/[0.14] rounded-xl px-4 py-3 text-white placeholder:text-text-secondary/60 outline-none focus:ring-2 focus:ring-magenta transition"
+          class="bg-white/[0.04] border border-white/[0.14] rounded-xl px-4 py-3 text-white placeholder:text-text-secondary/60 outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-magenta focus-visible:outline-offset-2 transition"
         />
       </label>
 

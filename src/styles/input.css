@@ -28,6 +28,17 @@
   }
 }
 
+@property --glow-x {
+  syntax: '<percentage>';
+  inherits: true;
+  initial-value: 50%;
+}
+@property --glow-y {
+  syntax: '<percentage>';
+  inherits: true;
+  initial-value: 20%;
+}
+
 .ambient-glow {
   position: fixed;
   inset: 0;
@@ -48,6 +59,12 @@
       rgba(8, 8, 13, 0) 75%),
     linear-gradient(180deg, #270C46 0%, #0F031C 55%, #110121 100%);
   animation: glowDrift 22s ease-in-out infinite alternate;
+}
+
+@keyframes glowDrift {
+  0%   { --glow-x: 50%; --glow-y: 15%; }
+  50%  { --glow-x: 65%; --glow-y: 35%; }
+  100% { --glow-x: 35%; --glow-y: 25%; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -132,5 +149,20 @@
   .modal-enter,
   .animate-pulse-slow {
     animation: none;
+  }
+}
+
+/* Cubre las transiciones de hover/focus de utilidades Tailwind (`transition`
+   en botones/inputs glass) que no tienen su propia keyframe nombrada arriba
+   — DESIGN.md sección 6 pide desactivar TODO el motion, no solo animaciones,
+   bajo prefers-reduced-motion. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
   }
 }
