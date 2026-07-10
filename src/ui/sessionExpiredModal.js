@@ -28,5 +28,3 @@ export const closeSessionExpiredModal = () => {
   modalActual?.remove();
   modalActual = null;
 };
-
-export const isSessionExpiredModalOpen = () => Boolean(modalActual);
