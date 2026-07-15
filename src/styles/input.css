@@ -75,6 +75,31 @@
   }
 }
 
+/* Silueta decorativa de fondo (mapa de Norteamérica): puramente ornamental,
+   misma capa fija que .ambient-glow, siempre detrás del contenido. Opacidad
+   muy baja y sin animación para que el glow siga siendo el elemento
+   dominante del fondo, nunca compitiendo visualmente con él. */
+.bg-map-silhouette {
+  position: fixed;
+  top: 8%;
+  right: -4%;
+  width: clamp(420px, 45vw, 780px);
+  height: clamp(420px, 45vw, 780px);
+  z-index: -10;
+  opacity: 0.06;
+  background-color: #E9E4F7;
+  -webkit-mask-image: url("/silueta-norteamerica.svg");
+  mask-image: url("/silueta-norteamerica.svg");
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-position: center;
+  mask-position: center;
+  pointer-events: none;
+  user-select: none;
+}
+
 /* Aparición de tarjetas (DESIGN.md sección 6): opacity 0→1 + translateY(8px→0). */
 @keyframes cardEnter {
   from {
