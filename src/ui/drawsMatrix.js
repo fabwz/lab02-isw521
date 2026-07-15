@@ -1,0 +1,57 @@
+// RF-RE-03/04: matriz visual de empates agrupada por grupo, con contador por grupo.
+export const renderDrawsMatrix = (container, { groups, totalCount }) => {
+  container.innerHTML = `
+    <div class="flex flex-wrap items-start justify-between gap-4 mt-6 mb-6">
+      <div class="flex items-center gap-3">
+        <h2 class="font-display text-[26px] leading-[30px] font-bold text-white">Radar de Empates</h2>
+      </div>
+      <div class="text-right">
+        <p class="body-sm text-text-secondary">Empates encontrados</p>
+        <p class="font-display font-extrabold text-4xl bg-gradient-accent bg-clip-text text-transparent">${totalCount}</p>
+      </div>
+    </div>
+
+    <div class="flex flex-col gap-6">
+      ${groups.map(renderGroupSectionHtml).join('')}
+    </div>
+  `;
+};
+
+const renderTeamHtml = (name, flag) => `
+  <span class="flex items-center gap-2">
+    ${flag ? `<img src="${flag}" alt="" class="w-5 h-5 rounded-full object-cover shrink-0" />` : ''}
+    <span>${name}</span>
+  </span>
+`;
+
+const renderGroupSectionHtml = ({ group, draws }) => `
+  <section class="glass rounded-[20px] p-5 flex flex-col gap-4" data-group="${group}">
+    <header class="flex items-center justify-between">
+      <h3 class="font-display font-bold text-white">Grupo ${group}</h3>
+      <span class="glass rounded-full px-2.5 py-0.5 text-xs text-text-secondary font-mono">${draws.length} empate${draws.length === 1 ? '' : 's'}</span>
+    </header>
+
+    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      ${draws.map(renderDrawCellHtml).join('')}
+    </div>
+  </section>
+`;
+
+const renderDrawCellHtml = (draw) => `
+  <article class="relative overflow-hidden glass rounded-[16px] pl-5 pr-4 py-4 flex flex-col gap-2" data-match-id="${draw.id}">
+    <span class="absolute inset-y-0 left-0 w-[3px] bg-gradient-to-b from-violet to-magenta"></span>
+
+    <div class="font-display font-bold text-white flex items-center justify-between gap-2 flex-wrap">
+      ${renderTeamHtml(draw.homeTeamName, draw.homeTeamFlag)}
+      <span class="text-text-secondary">vs</span>
+      ${renderTeamHtml(draw.awayTeamName, draw.awayTeamFlag)}
+    </div>
+
+    <div class="border-t border-dashed border-white/[0.16]"></div>
+
+    <div class="font-mono text-[15px] leading-5 flex items-center justify-between">
+      <p class="text-white">${draw.score} - ${draw.score}</p>
+      <p class="text-text-secondary text-[13px]">${draw.localDate}</p>
+    </div>
+  </article>
+`;

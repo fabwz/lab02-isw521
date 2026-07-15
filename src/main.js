@@ -6,6 +6,7 @@ import { renderTeamSelector } from './ui/teamSelector.js';
 import { renderItineraryCards, markStadiumsUnavailableForCards } from './ui/itineraryCards.js';
 import { renderGoalsList, patchTeamNamesForCards } from './ui/goalsList.js';
 import { renderStadiumsChart, markGamesUnavailableForStadiumsChart } from './ui/stadiumsChart.js';
+import { renderDrawsMatrix } from './ui/drawsMatrix.js';
 import { showSessionExpiredModal } from './ui/sessionExpiredModal.js';
 import { mountDevToolsPanel } from './ui/devToolsPanel.js';
 import {
@@ -31,6 +32,7 @@ import {
 import { buildItinerary } from './domain/itineraryService.js';
 import { buildGoalsList, reconcileGoalsListWithTeams } from './domain/goalsService.js';
 import { buildStadiumsAnalytics, buildStadiumsBaseline } from './domain/stadiumsAnalyticsService.js';
+import { buildDrawsRadar } from './domain/drawsService.js';
 import { PROJECTS } from './ui/projectMenu.js';
 
 // worldCupApi.js no conoce la UI: main.js inyecta estos callbacks (RF-09/RF-10)
@@ -319,6 +321,31 @@ const reintentarTeamsParaGoleadas = async (goalsSlot, games) => {
   }
 };
 
+// 2.5 Radar de Empates: reutiliza teams+games ya en memoria (mismo patrón que 2.1/2.2)
+// vía obtenerTeamsYGames(), sin duplicar peticiones. Solo camino feliz por ahora (RF-RE-01 a 04);
+// RF-RE-R (render incremental grupo por grupo) queda pendiente para el siguiente commit.
+const renderRadarDeEmpates = async (container) => {
+  container.innerHTML = '<div id="draws-slot"></div>';
+  const drawsSlot = container.querySelector('#draws-slot');
+
+  let teams;
+  let games;
+  try {
+    ({ teams, games } = await obtenerTeamsYGames());
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 401) {
+      manejarSesionExpirada();
+      return;
+    }
+    console.error('Fallo al cargar teams/games (sin caché disponible):', error);
+    clearAuth();
+    renderLoginScreen(app, { onSuccess: iniciarApp });
+    return;
+  }
+
+  renderDrawsMatrix(drawsSlot, buildDrawsRadar(games, teams));
+};
+
 const renderVistaActiva = async (viewSlot) => {
   if (vistaActiva === 'ruta-del-campeon') {
     await renderRutaDelCampeon(viewSlot);
@@ -326,6 +353,8 @@ const renderVistaActiva = async (viewSlot) => {
     await renderRastreadorDeGoleadas(viewSlot);
   } else if (vistaActiva === 'analitica-de-estadios') {
     await renderAnaliticaDeEstadios(viewSlot);
+  } else if (vistaActiva === 'radar-de-empates') {
+    await renderRadarDeEmpates(viewSlot);
   } else {
     renderVistaEnConstruccion(viewSlot, vistaActiva);
   }
