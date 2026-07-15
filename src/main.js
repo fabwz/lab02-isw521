@@ -4,7 +4,7 @@ import { renderLoginScreen } from './ui/loginForm.js';
 import { renderNavbar } from './ui/navbar.js';
 import { renderTeamSelector } from './ui/teamSelector.js';
 import { renderItineraryCards, markStadiumsUnavailableForCards } from './ui/itineraryCards.js';
-import { renderGoalsList } from './ui/goalsList.js';
+import { renderGoalsList, patchTeamNamesForCards } from './ui/goalsList.js';
 import { showSessionExpiredModal } from './ui/sessionExpiredModal.js';
 import { mountDevToolsPanel } from './ui/devToolsPanel.js';
 import {
@@ -23,10 +23,11 @@ import {
   simulateRateLimitRecovery,
   simulateServerError,
   simulateStadiumsFailureAfterRender,
+  simulateTeamsFailureAfterGamesResolved,
   simulateSessionExpired,
 } from './api/worldCupApi.js';
 import { buildItinerary } from './domain/itineraryService.js';
-import { buildGoalsList } from './domain/goalsService.js';
+import { buildGoalsList, reconcileGoalsListWithTeams } from './domain/goalsService.js';
 import { PROJECTS } from './ui/projectMenu.js';
 
 // worldCupApi.js no conoce la UI: main.js inyecta estos callbacks (RF-09/RF-10)
@@ -55,6 +56,10 @@ const manejarSesionExpirada = () => {
 // El simulador RF-11 usa esto para aplicar la actualización parcial sin volver a pedir /get/games.
 let currentMatchIds = [];
 
+// RF-RG-R: fuerza que la próxima carga de Rastreador de Goleadas trate /get/teams como fallido
+// (se consume una sola vez); ver renderRastreadorDeGoleadas.
+let forzarFalloTeamsEnGoleadas = false;
+
 mountDevToolsPanel({
   trigger401: async () => {
     await simulateSessionExpired();
@@ -69,6 +74,12 @@ mountDevToolsPanel({
       await simulateStadiumsFailureAfterRender(banners);
     } catch (error) {
       markStadiumsUnavailableForCards(app.querySelector('#itinerary-slot'), currentMatchIds);
+    }
+  },
+  triggerFalloEquipos: () => {
+    forzarFalloTeamsEnGoleadas = true;
+    if (vistaActiva === 'rastreador-de-goleadas') {
+      renderRastreadorDeGoleadas(app.querySelector('#view-slot'));
     }
   },
 });
@@ -153,28 +164,87 @@ const renderRutaDelCampeon = async (container) => {
   });
 };
 
+// RF-RG-R usa esto para volver a cruzar ids con nombres reales cuando /get/teams se
+// recupera en segundo plano, sobre la misma vista ya renderizada.
+let currentGoleadasMatches = [];
+
 const renderRastreadorDeGoleadas = async (container) => {
   container.innerHTML = '<div id="goals-slot"></div>';
   const goalsSlot = container.querySelector('#goals-slot');
 
-  let teams;
-  let games;
+  // Si ambos ya están en memoria (ej. se visitó primero La Ruta del Campeón) se reutilizan
+  // sin re-pedirlos — salvo que el simulador dev esté forzando el escenario RF-RG-R.
+  if (teamsYGamesEnMemoria && !forzarFalloTeamsEnGoleadas) {
+    const goleadas = buildGoalsList(teamsYGamesEnMemoria.games, teamsYGamesEnMemoria.teams);
+    currentGoleadasMatches = goleadas.matches;
+    renderGoalsList(goalsSlot, goleadas);
+    return;
+  }
 
+  // RF-RG-R: games y teams se piden por separado (no Promise.all) para que un fallo
+  // aislado de /get/teams no bloquee la vista si /get/games ya respondió.
+  let games;
   try {
-    ({ teams, games } = await obtenerTeamsYGames());
+    games = await getGames(banners);
+    if (!Array.isArray(games)) throw new Error('Respuesta inesperada de /get/games');
   } catch (error) {
     if (error instanceof ApiError && error.status === 401) {
       manejarSesionExpirada();
       return;
     }
-    console.error('Fallo al cargar teams/games (sin caché disponible):', error);
+    console.error('Fallo al cargar games (sin caché disponible):', error);
     clearAuth();
     renderLoginScreen(app, { onSuccess: iniciarApp });
     return;
   }
 
+  let teams = null;
+  try {
+    if (forzarFalloTeamsEnGoleadas) {
+      forzarFalloTeamsEnGoleadas = false;
+      await simulateTeamsFailureAfterGamesResolved(banners); // SOLO DEV: siempre lanza.
+    }
+    teams = await getTeams(banners);
+    if (!Array.isArray(teams)) throw new Error('Respuesta inesperada de /get/teams');
+    teamsYGamesEnMemoria = { teams, games };
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 401) {
+      manejarSesionExpirada();
+      return;
+    }
+    // Degradación RF-RG-R: sin caché de teams no se bloquea la vista, se sigue con ids crudos.
+    console.error('Fallo al cargar teams (RF-RG-R: se muestran ids crudos y se reintenta en segundo plano):', error);
+    teams = null;
+  }
+
   const goleadas = buildGoalsList(games, teams);
+  currentGoleadasMatches = goleadas.matches;
   renderGoalsList(goalsSlot, goleadas);
+
+  if (!teams) {
+    reintentarTeamsParaGoleadas(goalsSlot, games);
+  }
+};
+
+// RF-RG-R: reintenta /get/teams en segundo plano (getTeams ya usa fetchWithBackoff
+// internamente vía fetchDatasetResiliente) y, si se recupera, parchea solo los nombres/banderas
+// de las tarjetas ya renderizadas — sin volver a pedir /get/games ni recargar la página.
+const reintentarTeamsParaGoleadas = async (goalsSlot, games) => {
+  try {
+    const teamsRecuperados = await getTeams(banners);
+    if (!Array.isArray(teamsRecuperados)) return;
+
+    teamsYGamesEnMemoria = { teams: teamsRecuperados, games };
+
+    // El usuario pudo haber cambiado de vista mientras el backoff seguía en curso.
+    if (!goalsSlot.isConnected) return;
+
+    currentGoleadasMatches = reconcileGoalsListWithTeams(currentGoleadasMatches, teamsRecuperados);
+    patchTeamNamesForCards(goalsSlot, currentGoleadasMatches);
+    console.debug('[resiliencia] RF-RG-R — /get/teams se recuperó, nombres reales aplicados sobre la vista ya renderizada');
+  } catch (error) {
+    console.error('Fallo al reintentar /get/teams en segundo plano (RF-RG-R):', error);
+  }
 };
 
 const renderVistaActiva = async (viewSlot) => {

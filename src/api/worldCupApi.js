@@ -184,6 +184,27 @@ export const simulateStadiumsFailureAfterRender = async (banners) => {
   }
 };
 
+// SOLO DESARROLLO. Reto RF-RG-R (CLAUDE.md 6.2): fuerza que /get/teams falle en el
+// contexto puntual de renderRastreadorDeGoleadas, con /get/games ya resuelto. Igual que
+// simulateStadiumsFailureAfterRender, SIEMPRE propaga el error (nunca cae a caché) para que
+// main.js aplique el respaldo con ids crudos; el reintento en segundo plano que sigue usa
+// getTeams() real (contra la API real), lo que demuestra la recuperación automática completa.
+// Para quitarlo: borrar esta función, el import de mountDevTeamsFailureSimulator y sus líneas en main.js.
+export const simulateTeamsFailureAfterGamesResolved = async (banners) => {
+  if (!import.meta.env.DEV) return;
+  try {
+    await conBackoffVisible('teams', () => fetchSimulatedError(500), banners);
+  } catch (error) {
+    banners.hideRateLimitBanner('teams');
+    banners.hideServerErrorBanner('teams');
+    console.debug('[resiliencia][DEV] simulación RF-RG-R — /get/teams falló con /get/games ya resuelto', {
+      nombre: error.name,
+      status: error.status,
+    });
+    throw error;
+  }
+};
+
 // SOLO DESARROLLO. Fetch real a /dev-mock/401 para que clasificarRespuesta
 // construya el ApiError(401) real (visible en Network) en vez de simularlo a mano.
 // Para quitarlo: borrar esta función, el import de mountDevSessionSimulator y su línea en main.js.

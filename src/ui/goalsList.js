@@ -39,8 +39,10 @@ const releaseCardEnterClass = (container) => {
   });
 };
 
-const renderTeamHtml = (name, flag) => `
-  <span class="flex items-center gap-2">
+// `role` ("home"/"away") queda como data attribute para que patchTeamNamesForCards
+// (RF-RG-R) pueda ubicar y reemplazar solo ese span cuando /get/teams llega tarde.
+const renderTeamHtml = (name, flag, role) => `
+  <span class="flex items-center gap-2" data-team="${role}">
     ${flag ? `<img src="${flag}" alt="" class="w-5 h-5 rounded-full object-cover shrink-0" />` : ''}
     <span>${name}</span>
   </span>
@@ -56,9 +58,9 @@ const renderCardHtml = (match, indice) => `
 
     <header class="flex items-center justify-between gap-2">
       <h3 class="font-display font-bold text-white flex items-center gap-2 flex-wrap">
-        ${renderTeamHtml(match.homeTeamName, match.homeTeamFlag)}
+        ${renderTeamHtml(match.homeTeamName, match.homeTeamFlag, 'home')}
         <span class="text-text-secondary">vs</span>
-        ${renderTeamHtml(match.awayTeamName, match.awayTeamFlag)}
+        ${renderTeamHtml(match.awayTeamName, match.awayTeamFlag, 'away')}
       </h3>
       <span class="glass rounded-full px-2.5 py-0.5 text-xs text-text-secondary shrink-0">${formatGroupLabel(match.group)}</span>
     </header>
@@ -76,3 +78,16 @@ const renderCardHtml = (match, indice) => `
     <p class="font-mono text-[13px] text-text-secondary">${match.localDate}</p>
   </article>
 `;
+
+// Actualización PARCIAL (RF-RG-R, mismo patrón que markStadiumsUnavailableForCards de RF-11):
+// solo reemplaza los spans [data-team] de cada tarjeta ya renderizada, nunca container.innerHTML completo.
+export const patchTeamNamesForCards = (container, matches) => {
+  matches.forEach((match) => {
+    const tarjeta = container.querySelector(`article[data-match-id="${match.id}"]`);
+    if (!tarjeta) return;
+    const spanLocal = tarjeta.querySelector('[data-team="home"]');
+    const spanVisitante = tarjeta.querySelector('[data-team="away"]');
+    if (spanLocal) spanLocal.outerHTML = renderTeamHtml(match.homeTeamName, match.homeTeamFlag, 'home');
+    if (spanVisitante) spanVisitante.outerHTML = renderTeamHtml(match.awayTeamName, match.awayTeamFlag, 'away');
+  });
+};

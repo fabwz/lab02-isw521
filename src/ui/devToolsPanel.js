@@ -1,8 +1,15 @@
 // SOLO DESARROLLO. Agrupa los simuladores en un botón flotante único.
+// Mapa de atajos Ctrl+Shift+<tecla> — mantener esta lista al día al agregar un simulador nuevo,
+// cada mount*Simulator registra su propio listener de keydown y NO valida colisiones entre sí:
+//   E → 401 (sesión expirada)              R → 429 (agota reintentos)
+//   T → 429 (recupera al 3er intento)      S → 500 (servidor)
+//   D → RF-11  fallo estadios (2.1 La Ruta del Campeón)
+//   G → RF-RG-R fallo equipos (2.2 Rastreador de Goleadas)
 import { mountDevSessionSimulator } from './devSessionSimulator.js';
 import { mountDevRateLimitSimulator } from './devRateLimitSimulator.js';
 import { mountDevServerErrorSimulator } from './devServerErrorSimulator.js';
 import { mountDevStadiumsFailureSimulator } from './devStadiumsFailureSimulator.js';
+import { mountDevTeamsFailureSimulator } from './devTeamsFailureSimulator.js';
 
 export const mountDevToolsPanel = ({
   trigger401,
@@ -10,6 +17,7 @@ export const mountDevToolsPanel = ({
   trigger429Recupera,
   trigger500,
   triggerFalloEstadios,
+  triggerFalloEquipos,
 }) => {
   if (!import.meta.env.DEV) return;
 
@@ -76,5 +84,20 @@ export const mountDevToolsPanel = ({
   mountDevSessionSimulator(trigger401, panel);
   mountDevRateLimitSimulator(trigger429Agota, trigger429Recupera, panel);
   mountDevServerErrorSimulator(trigger500, panel);
+
+  // Retos de resiliencia específicos de cada subproyecto (sección 5.5/6.2 de CLAUDE.md):
+  // separados visualmente de los simuladores genéricos de arriba, y cada botón lleva el
+  // prefijo del subproyecto en su propia etiqueta para no confundirlos al ir agregando
+  // los de El Muro, Analítica de Estadios y Radar de Empates.
+  const separador = document.createElement('div');
+  separador.className = 'border-t border-white/[0.12] my-1';
+  panel.appendChild(separador);
+
+  const tituloRetos = document.createElement('p');
+  tituloRetos.textContent = 'Retos de resiliencia por subproyecto';
+  tituloRetos.className = 'body-sm text-white/60 px-1 pb-1';
+  panel.appendChild(tituloRetos);
+
   mountDevStadiumsFailureSimulator(triggerFalloEstadios, panel);
+  mountDevTeamsFailureSimulator(triggerFalloEquipos, panel);
 };

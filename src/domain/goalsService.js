@@ -1,11 +1,13 @@
 // Diferencia mínima de goles para considerar un partido "goleada" (RF-RG-03).
 const DIFERENCIA_MINIMA_GOLEADA = 3;
 
-const resolveTeamName = (teamId, teamsById) => teamsById.get(teamId)?.name_en ?? teamId;
-const resolveTeamFlag = (teamId, teamsById) => teamsById.get(teamId)?.flag ?? null;
+// RF-RG-R: `teamsById` puede ser null si /get/teams falló — se usa el id crudo como respaldo temporal.
+const resolveTeamName = (teamId, teamsById) => teamsById?.get(teamId)?.name_en ?? teamId;
+const resolveTeamFlag = (teamId, teamsById) => teamsById?.get(teamId)?.flag ?? null;
 
+// `teams` puede ser null/undefined (RF-RG-R): la lista se renderiza igual con los ids crudos.
 export const buildGoalsList = (games, teams) => {
-  const teamsById = new Map(teams.map((team) => [team.id, team]));
+  const teamsById = teams ? new Map(teams.map((team) => [team.id, team])) : null;
 
   // finished y los scores llegan como string desde /get/games (RF-RG-01/02).
   const partidosFinalizados = games.filter((juego) => juego.finished === 'TRUE');
@@ -20,6 +22,10 @@ export const buildGoalsList = (games, teams) => {
 
   const matches = goleadas.map((juego) => ({
     id: juego.id,
+    // Se conservan los ids crudos aunque teams haya resuelto (RF-RG-R): permiten
+    // recalcular nombre/bandera reales más tarde sin volver a pedir /get/games.
+    homeTeamId: juego.home_team_id,
+    awayTeamId: juego.away_team_id,
     homeTeamName: resolveTeamName(juego.home_team_id, teamsById),
     homeTeamFlag: resolveTeamFlag(juego.home_team_id, teamsById),
     awayTeamName: resolveTeamName(juego.away_team_id, teamsById),
@@ -35,4 +41,18 @@ export const buildGoalsList = (games, teams) => {
     matches,
     totalCount: matches.length,
   };
+};
+
+// RF-RG-R: recalcula nombre/bandera reales sobre una lista de matches YA construida
+// (con buildGoalsList) cuando /get/teams llega tarde por el reintento en segundo plano.
+// Llamable sobre el mismo resultado base sin volver a pedir /get/games.
+export const reconcileGoalsListWithTeams = (matches, teams) => {
+  const teamsById = new Map(teams.map((team) => [team.id, team]));
+  return matches.map((match) => ({
+    ...match,
+    homeTeamName: resolveTeamName(match.homeTeamId, teamsById),
+    homeTeamFlag: resolveTeamFlag(match.homeTeamId, teamsById),
+    awayTeamName: resolveTeamName(match.awayTeamId, teamsById),
+    awayTeamFlag: resolveTeamFlag(match.awayTeamId, teamsById),
+  }));
 };
