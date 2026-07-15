@@ -16,7 +16,7 @@ const ICON_USERS = `
 
 export const renderItineraryCards = (container, teamName, teamFlag, { matches, citiesVisitedCount }) => {
   container.innerHTML = `
-    <div class="flex flex-wrap items-start justify-between gap-4 mb-6">
+    <div class="flex flex-wrap items-start justify-between gap-4 mt-6 mb-6">
       <div class="flex items-center gap-3">
         ${teamFlag ? `<img src="${teamFlag}" alt="" class="w-10 h-10 rounded-full object-cover shrink-0" />` : ''}
         <h2 class="font-display text-[26px] leading-[30px] font-bold text-white">${teamName}</h2>

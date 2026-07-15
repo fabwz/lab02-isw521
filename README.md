@@ -1,4 +1,4 @@
-# La Ruta del Campeón
+# WC26 Analytics
 
 Aplicación web (Vanilla JS + Tailwind CSS) para el curso ISW-521. Construye el itinerario de partidos de un equipo del Mundial 2026, cruzando datos de equipos, partidos y estadios desde la API pública `https://worldcup26.ir`.
 

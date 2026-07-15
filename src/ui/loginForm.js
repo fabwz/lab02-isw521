@@ -104,7 +104,7 @@ export const renderLoginForm = (container, { onSuccess, subtitle, alertMessage }
 export const renderLoginScreen = (container, { onSuccess } = {}) => {
   container.innerHTML = `
     <main class="min-h-screen flex flex-col items-center justify-center px-4">
-      <img src="/logo.png" alt="La Ruta del Campeón" class="h-56 w-auto -mt-6 -mb-16" />
+      <img src="/wc26-analytics-logo.svg" alt="WC26 Analytics" class="h-56 w-auto -mt-16 -mb-8" />
       <div id="login-form-slot" class="flex justify-center w-full"></div>
     </main>
   `;
