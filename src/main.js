@@ -6,7 +6,7 @@ import { renderTeamSelector } from './ui/teamSelector.js';
 import { renderItineraryCards, markStadiumsUnavailableForCards } from './ui/itineraryCards.js';
 import { renderGoalsList, patchTeamNamesForCards } from './ui/goalsList.js';
 import { renderStadiumsChart, markGamesUnavailableForStadiumsChart } from './ui/stadiumsChart.js';
-import { renderDrawsMatrix } from './ui/drawsMatrix.js';
+import { renderDrawsMatrixShell, appendDrawsGroupSection } from './ui/drawsMatrix.js';
 import { showSessionExpiredModal } from './ui/sessionExpiredModal.js';
 import { mountDevToolsPanel } from './ui/devToolsPanel.js';
 import {
@@ -27,6 +27,7 @@ import {
   simulateStadiumsFailureAfterRender,
   simulateTeamsFailureAfterGamesResolved,
   simulateGamesFailureAfterStadiumsResolved,
+  simulateDrawsGroupRateLimit,
   simulateSessionExpired,
 } from './api/worldCupApi.js';
 import { buildItinerary } from './domain/itineraryService.js';
@@ -65,6 +66,11 @@ let currentMatchIds = [];
 // (se consume una sola vez); ver renderRastreadorDeGoleadas.
 let forzarFalloTeamsEnGoleadas = false;
 
+// RF-RE-R: fuerza que, en la próxima construcción incremental de la matriz de Radar de
+// Empates, el primer grupo pintado DESPUÉS de esta letra (alfabéticamente) trate su turno
+// como un 429 (se consume una sola vez); ver renderRadarDeEmpates.
+let forzar429DespuesDeGrupo = null;
+
 mountDevToolsPanel({
   trigger401: async () => {
     await simulateSessionExpired();
@@ -94,6 +100,14 @@ mountDevToolsPanel({
       await simulateGamesFailureAfterStadiumsResolved(banners);
     } catch (error) {
       markGamesUnavailableForStadiumsChart(chartSlot);
+    }
+  },
+  triggerFallo429Matriz: () => {
+    // RF-RE-R: se consume una sola vez, sobre la siguiente construcción de la matriz —
+    // ver forzar429DespuesDeGrupo en renderRadarDeEmpates.
+    forzar429DespuesDeGrupo = 'F';
+    if (vistaActiva === 'radar-de-empates') {
+      renderRadarDeEmpates(app.querySelector('#view-slot'));
     }
   },
 });
@@ -322,11 +336,19 @@ const reintentarTeamsParaGoleadas = async (goalsSlot, games) => {
 };
 
 // 2.5 Radar de Empates: reutiliza teams+games ya en memoria (mismo patrón que 2.1/2.2)
-// vía obtenerTeamsYGames(), sin duplicar peticiones. Solo camino feliz por ahora (RF-RE-01 a 04);
-// RF-RE-R (render incremental grupo por grupo) queda pendiente para el siguiente commit.
+// vía obtenerTeamsYGames(), sin duplicar peticiones.
+// RF-RE-R: la matriz se pinta grupo por grupo (renderDrawsMatrixShell + appendDrawsGroupSection
+// en drawsMatrix.js) con una pequeña pausa entre cada uno — nunca de un solo golpe. Si
+// forzar429DespuesDeGrupo está activo (solo vía simulador dev), el primer grupo pintado
+// después de esa letra pasa primero por simulateDrawsGroupRateLimit: esa "petición" puntual
+// entra en backoff con countdown visible SOLO para ese grupo, mientras los grupos ya
+// agregados al DOM antes de este punto permanecen intactos (nunca se re-renderiza la matriz
+// completa). Al resolverse el countdown, el loop continúa pintando el resto con normalidad.
+const PAUSA_ENTRE_GRUPOS_MS = 250;
+const espera = (delayMs) => new Promise((resolve) => setTimeout(resolve, delayMs));
+
 const renderRadarDeEmpates = async (container) => {
-  container.innerHTML = '<div id="draws-slot"></div>';
-  const drawsSlot = container.querySelector('#draws-slot');
+  container.innerHTML = '';
 
   let teams;
   let games;
@@ -343,7 +365,28 @@ const renderRadarDeEmpates = async (container) => {
     return;
   }
 
-  renderDrawsMatrix(drawsSlot, buildDrawsRadar(games, teams));
+  const { groups, totalCount } = buildDrawsRadar(games, teams);
+  renderDrawsMatrixShell(container, totalCount);
+  const groupsSlot = container.querySelector('#draws-groups-slot');
+
+  const letraLimiteFallo = forzar429DespuesDeGrupo;
+  forzar429DespuesDeGrupo = null; // se consume una sola vez, sin importar si esta vista termina de pintar
+  let yaSimuloFallo = false;
+
+  for (const group of groups) {
+    if (!yaSimuloFallo && letraLimiteFallo && group.group > letraLimiteFallo) {
+      yaSimuloFallo = true;
+      // failCount: 4 (no el default de 1) para que el countdown sea demostrable con calma en
+      // la defensa oral (1s→2s→4s→8s, mismo patrón que simulateRateLimit) — no altera el
+      // comportamiento funcional real ante un 429 genuino, solo la duración de esta demo.
+      await simulateDrawsGroupRateLimit(group.group, banners, { failCount: 4 });
+      // El usuario pudo haber cambiado de vista mientras el countdown corría.
+      if (!groupsSlot.isConnected) return;
+    }
+
+    appendDrawsGroupSection(groupsSlot, group);
+    await espera(PAUSA_ENTRE_GRUPOS_MS);
+  }
 };
 
 const renderVistaActiva = async (viewSlot) => {

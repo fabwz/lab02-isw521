@@ -1,5 +1,11 @@
 // RF-RE-03/04: matriz visual de empates agrupada por grupo, con contador por grupo.
-export const renderDrawsMatrix = (container, { groups, totalCount }) => {
+// RF-RE-R: la matriz se pinta de forma INCREMENTAL (grupo por grupo, ver renderDrawsMatrixShell +
+// appendDrawsGroupSection), nunca de un solo golpe — así un 429 a mitad de la secuencia puede
+// dejar ver los grupos ya pintados sin destruirlos, en vez de re-renderizar toda la matriz.
+
+// Pinta el encabezado (título + contador total) y deja el contenedor de grupos vacío, listo
+// para recibir secciones una por una vía appendDrawsGroupSection.
+export const renderDrawsMatrixShell = (container, totalCount) => {
   container.innerHTML = `
     <div class="flex flex-wrap items-start justify-between gap-4 mt-6 mb-6">
       <div class="flex items-center gap-3">
@@ -11,9 +17,7 @@ export const renderDrawsMatrix = (container, { groups, totalCount }) => {
       </div>
     </div>
 
-    <div class="flex flex-col gap-6">
-      ${groups.map(renderGroupSectionHtml).join('')}
-    </div>
+    <div id="draws-groups-slot" class="flex flex-col gap-6"></div>
   `;
 };
 
@@ -55,3 +59,9 @@ const renderDrawCellHtml = (draw) => `
     </div>
   </article>
 `;
+
+// RF-RE-R: agrega UN grupo al contenedor ya existente, sin tocar los grupos ya pintados.
+// `groupsSlot` es el nodo `#draws-groups-slot` devuelto por renderDrawsMatrixShell.
+export const appendDrawsGroupSection = (groupsSlot, group) => {
+  groupsSlot.insertAdjacentHTML('beforeend', renderGroupSectionHtml(group));
+};

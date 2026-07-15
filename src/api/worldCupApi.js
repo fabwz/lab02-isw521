@@ -225,6 +225,37 @@ export const simulateGamesFailureAfterStadiumsResolved = async (banners) => {
   }
 };
 
+// SOLO DESARROLLO. Reto RF-RE-R (requirements.md 12): la matriz de Radar de Empates se
+// pinta grupo por grupo (ver renderDrawsMatrixShell/appendDrawsGroupSection en drawsMatrix.js);
+// esta función simula que, al llegar el turno del grupo pendiente, esa "petición" puntual
+// devuelve 429 `failCount` veces (con countdown vía conBackoffVisible) y luego se recupera —
+// igual que simulateRateLimitRecovery, pero con `source` namespaced por grupo
+// (`draws-group:<letra>`) para que el backoff de un grupo nunca se mezcle con el de otro ni
+// con el de teams/games. Los grupos ya pintados antes de este punto no se tocan: main.js solo
+// llama a esto ANTES de invocar appendDrawsGroupSection para el grupo pendiente.
+// Para quitarlo: borrar esta función, el import de mountDevDrawsGroupFailureSimulator y sus líneas en main.js.
+export const simulateDrawsGroupRateLimit = async (groupLetter, banners, { failCount = 1 } = {}) => {
+  if (!import.meta.env.DEV) return;
+
+  const source = `draws-group:${groupLetter}`;
+  let intentosHechos = 0;
+  const peticionFalsa = async () => {
+    intentosHechos += 1;
+    if (intentosHechos <= failCount) {
+      return await fetchSimulatedError(429);
+    }
+    return await fetchSimulatedSuccess();
+  };
+
+  try {
+    await conBackoffVisible(source, peticionFalsa, banners);
+    console.debug('[resiliencia][DEV] simulación RF-RE-R — grupo pendiente se recuperó', { groupLetter, intentosHechos });
+  } finally {
+    banners.hideRateLimitBanner(source);
+    banners.hideServerErrorBanner(source);
+  }
+};
+
 // SOLO DESARROLLO. Fetch real a /dev-mock/401 para que clasificarRespuesta
 // construya el ApiError(401) real (visible en Network) en vez de simularlo a mano.
 // Para quitarlo: borrar esta función, el import de mountDevSessionSimulator y su línea en main.js.
