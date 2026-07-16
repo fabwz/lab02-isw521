@@ -12,6 +12,15 @@ const parseLocalDate = (localDate) => {
 
 // RF-EM-01/02: recorre los 12 grupos, extrae team_id+ga (string → number) de cada uno
 // de los 4 equipos, unifica los 48 registros y ordena ascendente por ga (mejor defensa primero).
+//
+// Verificado con datos reales (worldcup26.ir): `ga` viene congelado al cierre de la fase de
+// grupos — todos los equipos, incluso los que ya jugaron eliminatorias, traen `mp` (partidos
+// jugados) === "3" en este endpoint, sin importar cuántos partidos de eliminación directa
+// lleven en /get/games. Ej.: España registra `ga: "0"` aquí aunque ya recibió goles en
+// R16/QF/SF — ese `0` es "goles en contra en fase de grupos", no del torneo completo. Esto
+// es el comportamiento correcto que pide RF-EM-01 (usar el `ga` de /get/groups tal cual), no
+// una limitación a corregir — por eso la UI etiqueta el número como "GC (fase de grupos)",
+// ver wallRanking.js.
 const buildGoalsAgainstRanking = (groups) => {
   const registros = groups.flatMap((group) =>
     group.teams.map((team) => ({

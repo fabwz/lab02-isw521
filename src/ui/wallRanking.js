@@ -85,9 +85,16 @@ const renderRankingCardHtml = (entrada, indice) => `
       ${renderTeamHtml(entrada.teamName, entrada.teamFlag)}
     </div>
 
-    <div class="flex items-center gap-2 font-mono text-[15px] text-white">
-      <span class="text-text-secondary">${ICON_SHIELD}</span>
-      <span>${entrada.goalsAgainst} GC</span>
+    <!-- "(fase de grupos)" es intencional, no relleno visual: ga viene congelado al cierre
+    de la fase de grupos (ver buildGoalsAgainstRanking en wallService.js), así que el número
+    no representa goles recibidos en todo el torneo — sin esta aclaración es fácil leerlo mal
+    en la demo/defensa oral. -->
+    <div class="font-mono text-[15px] leading-5 flex flex-col items-end gap-1">
+      <span class="flex items-center gap-2 text-white">
+        <span class="text-text-secondary">${ICON_SHIELD}</span>
+        <span>${entrada.goalsAgainst} GC</span>
+      </span>
+      <span class="text-text-secondary text-[13px]">(fase de grupos)</span>
     </div>
 
     <div class="font-mono text-[15px] leading-5 flex flex-col items-end gap-1">
