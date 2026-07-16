@@ -5,6 +5,7 @@ import { renderNavbar } from './ui/navbar.js';
 import { renderTeamSelector } from './ui/teamSelector.js';
 import { renderItineraryCards, markStadiumsUnavailableForCards } from './ui/itineraryCards.js';
 import { renderGoalsList, patchTeamNamesForCards } from './ui/goalsList.js';
+import { renderWallRanking } from './ui/wallRanking.js';
 import { renderStadiumsChart, markGamesUnavailableForStadiumsChart } from './ui/stadiumsChart.js';
 import { renderDrawsMatrixShell, appendDrawsGroupSection } from './ui/drawsMatrix.js';
 import { showSessionExpiredModal } from './ui/sessionExpiredModal.js';
@@ -30,8 +31,10 @@ import {
   simulateDrawsGroupRateLimit,
   simulateSessionExpired,
 } from './api/worldCupApi.js';
+import { getGroups } from './api/groupsApi.js';
 import { buildItinerary } from './domain/itineraryService.js';
 import { buildGoalsList, reconcileGoalsListWithTeams } from './domain/goalsService.js';
+import { buildWallRanking } from './domain/wallService.js';
 import { buildStadiumsAnalytics, buildStadiumsBaseline } from './domain/stadiumsAnalyticsService.js';
 import { buildDrawsRadar } from './domain/drawsService.js';
 import { PROJECTS } from './ui/projectMenu.js';
@@ -335,6 +338,46 @@ const reintentarTeamsParaGoleadas = async (goalsSlot, games) => {
   }
 };
 
+// 2.3 El Muro: reutiliza teams/games ya en memoria (mismo patrón que 2.1/2.2/2.5) vía
+// obtenerTeamsYGames(), y pide /get/groups aparte (solo lo consume este subproyecto).
+const renderElMuro = async (container) => {
+  container.innerHTML = '<div id="wall-slot"></div>';
+  const wallSlot = container.querySelector('#wall-slot');
+
+  let teams;
+  let games;
+  try {
+    ({ teams, games } = await obtenerTeamsYGames());
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 401) {
+      manejarSesionExpirada();
+      return;
+    }
+    console.error('Fallo al cargar teams/games (sin caché disponible):', error);
+    clearAuth();
+    renderLoginScreen(app, { onSuccess: iniciarApp });
+    return;
+  }
+
+  let groups;
+  try {
+    groups = await getGroups(banners);
+    if (!Array.isArray(groups)) throw new Error('Respuesta inesperada de /get/groups');
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 401) {
+      manejarSesionExpirada();
+      return;
+    }
+    console.error('Fallo al cargar groups (sin caché disponible):', error);
+    clearAuth();
+    renderLoginScreen(app, { onSuccess: iniciarApp });
+    return;
+  }
+
+  const { ranking } = buildWallRanking(groups, teams, games);
+  renderWallRanking(wallSlot, { ranking });
+};
+
 // 2.5 Radar de Empates: reutiliza teams+games ya en memoria (mismo patrón que 2.1/2.2)
 // vía obtenerTeamsYGames(), sin duplicar peticiones.
 // RF-RE-R: la matriz se pinta grupo por grupo (renderDrawsMatrixShell + appendDrawsGroupSection
@@ -394,6 +437,8 @@ const renderVistaActiva = async (viewSlot) => {
     await renderRutaDelCampeon(viewSlot);
   } else if (vistaActiva === 'rastreador-de-goleadas') {
     await renderRastreadorDeGoleadas(viewSlot);
+  } else if (vistaActiva === 'el-muro') {
+    await renderElMuro(viewSlot);
   } else if (vistaActiva === 'analitica-de-estadios') {
     await renderAnaliticaDeEstadios(viewSlot);
   } else if (vistaActiva === 'radar-de-empates') {
