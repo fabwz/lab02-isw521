@@ -74,6 +74,14 @@ let forzarFalloTeamsEnGoleadas = false;
 // como un 429 (se consume una sola vez); ver renderRadarDeEmpates.
 let forzar429DespuesDeGrupo = null;
 
+// RF-EM-R: fuerza que, en la próxima construcción del ranking de El Muro, la búsqueda de
+// próximo rival del equipo en esta posición del top 5 (0-4) falle, sin afectar a los otros
+// 4 (se consume una sola vez); ver renderElMuro y buildWallRanking. El dataset real de
+// worldcup26.ir tiene hoy los 5 equipos del ranking en estado 'eliminated' (sin próximo
+// partido pendiente), así que este fallo no se puede demostrar con un fetch real — se fuerza
+// sobre el cálculo de búsqueda en sí, dentro de wallService.js.
+let forzarFalloRivalIndice = null;
+
 mountDevToolsPanel({
   trigger401: async () => {
     await simulateSessionExpired();
@@ -111,6 +119,15 @@ mountDevToolsPanel({
     forzar429DespuesDeGrupo = 'F';
     if (vistaActiva === 'radar-de-empates') {
       renderRadarDeEmpates(app.querySelector('#view-slot'));
+    }
+  },
+  triggerFalloRivalMuro: () => {
+    // RF-EM-R: se consume una sola vez, sobre el siguiente ranking construido — falla la
+    // búsqueda del equipo en la posición 2 (3ro de 5, valor arbitrario) para dejar ver que
+    // los otros 4 registros no se ven afectados; ver forzarFalloRivalIndice en renderElMuro.
+    forzarFalloRivalIndice = 2;
+    if (vistaActiva === 'el-muro') {
+      renderElMuro(app.querySelector('#view-slot'));
     }
   },
 });
@@ -374,7 +391,11 @@ const renderElMuro = async (container) => {
     return;
   }
 
-  const { ranking } = buildWallRanking(groups, teams, games);
+  // RF-EM-R: se consume una sola vez, sin importar si esta vista termina de pintar.
+  const indiceFallo = forzarFalloRivalIndice;
+  forzarFalloRivalIndice = null;
+
+  const { ranking } = buildWallRanking(groups, teams, games, { forcedFailureIndex: indiceFallo });
   renderWallRanking(wallSlot, { ranking });
 };
 

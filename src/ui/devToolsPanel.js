@@ -7,8 +7,9 @@
 //   G → RF-RG-R fallo equipos (2.2 Rastreador de Goleadas)
 //   A → RF-AE-R fallo partidos (2.4 Analítica de Estadios, "Analítica")
 //   Q → RF-RE-R 429 a mitad de matriz (2.5 Radar de Empates) — NO se usó "M" (Matriz) a
-//       propósito: El Muro (2.3) también empieza con M y necesitará su propio atajo pronto,
-//       así que se reserva esa letra para cuando se construya el simulador de El Muro.
+//       propósito: El Muro (2.3) también empieza con M y hubiera chocado con Q más adelante.
+//   W → RF-EM-R fallo próximo rival de 1 de 5 equipos (2.3 El Muro, de "Wall") — se evitó "M"
+//       por la razón de arriba.
 import { mountDevSessionSimulator } from './devSessionSimulator.js';
 import { mountDevRateLimitSimulator } from './devRateLimitSimulator.js';
 import { mountDevServerErrorSimulator } from './devServerErrorSimulator.js';
@@ -16,6 +17,7 @@ import { mountDevStadiumsFailureSimulator } from './devStadiumsFailureSimulator.
 import { mountDevTeamsFailureSimulator } from './devTeamsFailureSimulator.js';
 import { mountDevGamesFailureSimulator } from './devGamesFailureSimulator.js';
 import { mountDevDrawsGroupFailureSimulator } from './devDrawsGroupFailureSimulator.js';
+import { mountDevWallFailureSimulator } from './devWallFailureSimulator.js';
 
 export const mountDevToolsPanel = ({
   trigger401,
@@ -26,6 +28,7 @@ export const mountDevToolsPanel = ({
   triggerFalloEquipos,
   triggerFalloPartidosEstadios,
   triggerFallo429Matriz,
+  triggerFalloRivalMuro,
 }) => {
   if (!import.meta.env.DEV) return;
 
@@ -108,6 +111,7 @@ export const mountDevToolsPanel = ({
 
   mountDevStadiumsFailureSimulator(triggerFalloEstadios, panel);
   mountDevTeamsFailureSimulator(triggerFalloEquipos, panel);
+  mountDevWallFailureSimulator(triggerFalloRivalMuro, panel);
   mountDevGamesFailureSimulator(triggerFalloPartidosEstadios, panel);
   mountDevDrawsGroupFailureSimulator(triggerFallo429Matriz, panel);
 };
