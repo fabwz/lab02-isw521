@@ -84,7 +84,9 @@ Requiere `Authorization: Bearer <token>`. Devuelve un array de 104 partidos.
 ```
 
 **Campos a usar en la app:**
-- `home_team_id` / `away_team_id` → cruce con `teams`. **Ojo:** en partidos de fase de eliminación aún no definidos, vienen como `"0"` — en ese caso usar `home_team_label`/`away_team_label` como respaldo (ej. "Runner-up Group A"). Para este subproyecto (fase de grupos, equipo ya definido) esto es poco frecuente, pero vale la pena un fallback defensivo.
+- `home_team_id` / `away_team_id` → cruce con `teams`. **Ojo:** en partidos de fase de eliminación aún no definidos, vienen como `"0"`, con `home_team_label`/`away_team_label` tipo `"Winner Match 101"` / `"Loser Match 101"` / `"Runner-up Group A"`.
+  - ⚠️ **La API no reescribe el placeholder con el id real automáticamente**, ni siquiera después de que el partido que lo alimenta (ej. el 101) ya tenga `finished: "TRUE"` — el `"0"` puede persistir en el partido dependiente (ej. la Final, id 104) aunque el resultado que lo define ya se conozca. **Se puede resolver del lado del cliente**: parsear el número de partido del label (`"Winner Match 101"` → partido `101`), buscar ese partido por `id`, y si ya está `finished: "TRUE"`, determinar el ganador/perdedor comparando `home_score`/`away_score` (recordar que ambos son **string**) para obtener el `team_id` real. Ver la implementación de referencia en `wallService.js` (`resolvePlaceholderTeamId`), usada para el reto de resiliencia RF-EM-04 (próximo rival de El Muro).
+  - Para subproyectos que solo operan sobre partidos ya `finished: "TRUE"` con ids reales (Rastreador de Goleadas, Radar de Empates), este caso no aplica — el placeholder solo importa cuando se busca un partido **futuro** de un equipo específico.
 - `group` → viene nativo, no requiere `/get/groups`. Valores exactos confirmados:
 
   | Valor | Etapa | Etiqueta a mostrar |
