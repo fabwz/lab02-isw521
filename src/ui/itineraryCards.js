@@ -1,4 +1,5 @@
 import { formatGroupLabel, animateCountUp } from '../utils/format.js';
+import { t } from '../utils/i18n.js';
 
 // Íconos Lucide como SVG inline (CLAUDE.md 2), nunca el paquete npm ni el script CDN.
 const ICON_CALENDAR = `
@@ -22,7 +23,7 @@ export const renderItineraryCards = (container, teamName, teamFlag, { matches, c
         <h2 class="font-display text-[1.625rem] leading-[1.875rem] font-bold text-white">${teamName}</h2>
       </div>
       <div class="text-right">
-        <p class="body-sm text-text-secondary">Ciudades visitadas</p>
+        <p class="body-sm text-text-secondary">${t('itinerary.citiesVisited')}</p>
         <p class="font-display font-extrabold text-4xl bg-gradient-accent bg-clip-text text-transparent" data-cities-count>0</p>
       </div>
     </div>
@@ -75,7 +76,7 @@ const renderCardHtml = (match, indice) => `
 
 const renderStadiumFieldsHtml = (stadium) => {
   if (!stadium) {
-    return `<p class="flex items-center gap-2 text-text-secondary italic"><span>${ICON_LANDMARK}</span>Estadio no disponible</p>`;
+    return `<p class="flex items-center gap-2 text-text-secondary italic"><span>${ICON_LANDMARK}</span>${t('itinerary.stadiumUnavailable')}</p>`;
   }
   return `
     <p class="flex items-center gap-2 text-white"><span class="text-text-secondary">${ICON_LANDMARK}</span>${stadium.name}</p>

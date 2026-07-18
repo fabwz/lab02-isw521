@@ -1,3 +1,5 @@
+import { t } from '../utils/i18n.js';
+
 const ICON_CHEVRON_DOWN = `
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
 `;
@@ -7,13 +9,13 @@ export const renderTeamSelector = (container, teams, { onTeamSelected } = {}) =>
 
   container.innerHTML = `
     <label class="flex flex-col gap-1.5">
-      <span class="body-sm text-text-secondary">Selecciona un equipo</span>
+      <span class="body-sm text-text-secondary">${t('itinerary.selectTeam')}</span>
       <div class="relative">
         <select
           name="team"
           class="glass appearance-none w-full rounded-full pl-5 pr-10 py-3 text-white bg-[#1D1032] outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-magenta focus-visible:outline-offset-2"
         >
-          <option value="" disabled selected class="bg-[#1D1032] text-white">Elige un equipo</option>
+          <option value="" disabled selected class="bg-[#1D1032] text-white">${t('itinerary.chooseTeam')}</option>
           ${equiposOrdenados
             .map((equipo) => `<option value="${equipo.id}" class="bg-[#1D1032] text-white">${equipo.name_en}</option>`)
             .join('')}
