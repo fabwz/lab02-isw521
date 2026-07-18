@@ -16,7 +16,7 @@ const renderBarRow = ({ label, value, maxValue, gradientClass }) => {
   const anchoPorcentaje = maxValue > 0 ? Math.round((value / maxValue) * 100) : 0;
   return `
     <div class="flex items-center gap-3">
-      <span class="body-sm text-text-secondary w-20 shrink-0">${label}</span>
+      <span class="body-sm text-text-secondary min-w-[5rem] shrink-0">${label}</span>
       <div class="flex-1 h-3 rounded-full bg-white/[0.06] overflow-hidden">
         <div class="h-full rounded-full ${gradientClass}" style="width: ${anchoPorcentaje}%"></div>
       </div>
@@ -33,11 +33,11 @@ const renderGamesRow = (stadium, maxGameCount) => {
   if (stadium.gameCount === null) {
     return `
       <div class="flex items-center gap-3" data-games-row data-games-status="pending">
-        <span class="body-sm text-text-secondary w-20 shrink-0">${t('stadiums.games')}</span>
+        <span class="body-sm text-text-secondary min-w-[5rem] shrink-0">${t('stadiums.games')}</span>
         <div class="flex-1 h-3 rounded-full bg-white/[0.06] overflow-hidden">
           <div class="h-full w-1/4 rounded-full bg-gradient-accent animate-pulse"></div>
         </div>
-        <span class="body-sm text-text-secondary w-20 shrink-0 text-right">${t('stadiums.waiting')}</span>
+        <span class="body-sm text-text-secondary min-w-[5rem] shrink-0 text-right">${t('stadiums.waiting')}</span>
       </div>
     `;
   }
