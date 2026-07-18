@@ -1,4 +1,5 @@
 import { animateCountUp } from '../utils/format.js';
+import { t } from '../utils/i18n.js';
 
 // RF-RE-03/04: matriz visual de empates agrupada por grupo, con contador por grupo.
 // RF-RE-R: la matriz se pinta de forma INCREMENTAL (grupo por grupo, ver renderDrawsMatrixShell +
@@ -17,11 +18,11 @@ export const renderDrawsMatrixShell = (container, totalCount) => {
   container.innerHTML = `
     <div class="flex flex-wrap items-start justify-between gap-4 mt-6 mb-6">
       <div class="flex-1 min-w-[240px]">
-        <h2 class="header-enter font-display text-[1.625rem] leading-[1.875rem] font-bold text-white">Radar de Empates</h2>
-        <p class="header-enter body-sm text-text-secondary mt-2" style="animation-delay: 60ms">Partidos empatados del torneo, agrupados por grupo.</p>
+        <h2 class="header-enter font-display text-[1.625rem] leading-[1.875rem] font-bold text-white">${t('draws.title')}</h2>
+        <p class="header-enter body-sm text-text-secondary mt-2" style="animation-delay: 60ms">${t('draws.description')}</p>
       </div>
       <div class="text-right">
-        <p class="body-sm text-text-secondary">Empates encontrados</p>
+        <p class="body-sm text-text-secondary">${t('draws.found')}</p>
         <p class="font-display font-extrabold text-4xl bg-gradient-accent bg-clip-text text-transparent" data-draws-count>0</p>
       </div>
     </div>
@@ -41,8 +42,8 @@ const renderTeamHtml = (name, flag) => `
 const renderGroupSectionHtml = ({ group, draws }) => `
   <section class="glass rounded-[20px] p-5 flex flex-col gap-4" data-group="${group}">
     <header class="flex items-center justify-between">
-      <h3 class="font-display font-bold text-white">Grupo ${group}</h3>
-      <span class="glass rounded-full px-2.5 py-0.5 text-xs text-text-secondary font-mono">${draws.length} empate${draws.length === 1 ? '' : 's'}</span>
+      <h3 class="font-display font-bold text-white">${t('draws.group')} ${group}</h3>
+      <span class="glass rounded-full px-2.5 py-0.5 text-xs text-text-secondary font-mono">${draws.length} ${draws.length === 1 ? t('draws.count.one') : t('draws.count.other')}</span>
     </header>
 
     <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
