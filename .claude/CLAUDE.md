@@ -8,13 +8,11 @@ Este archivo es el contexto de arquitectura para Claude Code al trabajar en este
 
 Aplicación web para el curso ISW-521 (Programación en Ambiente Web I), Categoría A: Cruce de Datos y Analítica. Es una SPA sin framework que consume la API pública del Mundial 2026 (`https://worldcup26.ir`) para construir **5 vistas derivadas distintas**, una por cada subproyecto del catálogo:
 
-1. **La Ruta del Campeón** — ✅ implementado y verificado. Itinerario de partidos de un equipo (equipos + partidos + estadios).
-2. **Rastreador de Goleadas** — pendiente. Lista ordenada de partidos con diferencia de gol ≥3.
-3. **El Muro** — pendiente. Ranking de las 5 mejores defensas + próximo rival de cada una.
-4. **Analítica de Estadios** — pendiente. Gráfica de barras de asistencia potencial por estadio.
+1. **La Ruta del Campeón** — Itinerario de partidos de un equipo (equipos + partidos + estadios).
+2. **Rastreador de Goleadas** — Lista ordenada de partidos con diferencia de gol ≥3.
+3. **El Muro** — Ranking de las 5 mejores defensas + próximo rival de cada una.
+4. **Analítica de Estadios** — Gráfica de barras de asistencia potencial por estadio.
 5. **Radar de Empates** — pendiente. Matriz visual de empates agrupados por grupo.
-
-> ⚠️ **Cambio de alcance respecto al enunciado original:** el PDF del enunciado especificaba elegir **un solo** subproyecto. El profesor comunicó posteriormente (verbalmente/fuera del PDF) que deben implementarse **los 5**, con igual peso. Este cambio está **pendiente de confirmación por escrito** — ver nota en `context/requirements.md`. Si en algún momento se recibe una corrección oficial que contradiga esto, `requirements.md` es la fuente de verdad a actualizar primero.
 
 > ⚠️ **Requisitos adicionales fuera del PDF (también verbales):** accesibilidad (idioma ES/EN completo con `lang="es-CR"`, navegación por Tab en tarjetas sin acción de Enter, control de tamaño de texto A-/A/A+) y seguridad (sin especificar aún). Ver `context/requirements.md` secciones 15 y 16.
 
@@ -110,11 +108,11 @@ lab02-isw521/
     │
     ├── domain/                → LÓGICA DE NEGOCIO / CRUCE DE DATOS (sin fetch, sin DOM) — un archivo por subproyecto
     │   ├── authService.js            → login/logout (envuelve authApi.js + appState.js, ver corrección de RNF-01)
-    │   ├── itineraryService.js       → 2.1 La Ruta del Campeón ✅
-    │   ├── goalsService.js           → 2.2 Rastreador de Goleadas ✅
-    │   ├── wallService.js            → 2.3 El Muro ✅
-    │   ├── stadiumsAnalyticsService.js → 2.4 Analítica de Estadios ✅
-    │   └── drawsService.js           → 2.5 Radar de Empates ✅
+    │   ├── itineraryService.js       → 2.1 La Ruta del Campeón 
+    │   ├── goalsService.js           → 2.2 Rastreador de Goleadas 
+    │   ├── wallService.js            → 2.3 El Muro 
+    │   ├── stadiumsAnalyticsService.js → 2.4 Analítica de Estadios 
+    │   └── drawsService.js           → 2.5 Radar de Empates 
     │
     ├── state/                 → ESTADO Y PERSISTENCIA (sin DOM) — compartido por los 5
     │   └── appState.js        → token/user (auth), caché por endpoint con timestamp, subproyecto activo
@@ -123,7 +121,8 @@ lab02-isw521/
     │   ├── loginForm.js       → formulario de login — compartido (reutilizado en pantalla completa y en modal 401)
     │   ├── navbar.js          → contenedor de la navbar (logo + projectMenu + accountMenu)
     │   ├── projectMenu.js     → dropdown "Proyectos" para navegar entre los 5 subproyectos
-    │   ├── accountMenu.js     → dropdown del ícono de cuenta — próxima casa de accessibilityPanel.js (pendiente, ver §15)
+    │   ├── accountMenu.js     → dropdown del ícono de cuenta — monta accessibilityPanel.js en su sección "Accesibilidad"
+    │   ├── accessibilityPanel.js → sección "Accesibilidad" del dropdown de cuenta: control de tamaño de texto A-/A/A+ (RF-A11Y-03) Próxima casa también del futuro toggle de idioma (RF-A11Y-01, pendiente)
     │   ├── sessionExpiredModal.js → modal de reautenticación (401), envuelve loginForm.js
     │   ├── resilienceBanners.js   → banners en tiempo real (countdown 429, backoff 500, badge de caché), `source` namespaced por subproyecto+dataset
     │   ├── teamSelector.js    → 2.1 selector de equipo
@@ -137,6 +136,7 @@ lab02-isw521/
     └── utils/                 → HELPERS PUROS (sin estado, sin DOM, sin fetch) — compartidos
         ├── backoff.js         → fetchWithBackoff(fetchFn, opciones)
         ├── format.js          → formateo de fechas, ciudad/país y otros helpers de presentación
+        ├── fontScale.js       → RF-A11Y-03 niveles reducido/normal/aumentado, persistencia en localStorage (`a11y:fontScale`) y aplicación de `--user-font-scale` sobre `<html>`. Lo llama main.js (initFontScale, antes de renderizar nada) y ui/accessibilityPanel.js (botones A-/A/A+)
         └── i18n.js            → (pendiente de crear) diccionario ES/EN + función de traducción + persistencia de idioma (RF-A11Y-01)
 ```
 

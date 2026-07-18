@@ -23,7 +23,7 @@ export const showRateLimitBanner = (source, segundosRestantes) => {
     chip429 = document.createElement('div');
     chip429.className = 'glass rounded-2xl px-4 py-3 flex items-center gap-3 banner-enter';
     chip429.innerHTML = `
-      <span class="font-mono text-[28px] leading-[32px] font-medium text-signal" data-role="seconds"></span>
+      <span class="font-mono text-[1.75rem] leading-[2rem] font-medium text-signal" data-role="seconds"></span>
       <span class="body-sm text-text-secondary leading-tight">Límite de tasa<br />reintentando en</span>
     `;
     getContenedor().appendChild(chip429);

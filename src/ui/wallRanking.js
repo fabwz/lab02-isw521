@@ -7,7 +7,7 @@ export const renderWallRanking = (container, { ranking }) => {
   container.innerHTML = `
     <div class="flex flex-wrap items-start justify-between gap-4 mt-6 mb-6">
       <div class="flex-1 min-w-[240px]">
-        <h2 class="header-enter font-display text-[26px] leading-[30px] font-bold text-white">El Muro</h2>
+        <h2 class="header-enter font-display text-[1.625rem] leading-[1.875rem] font-bold text-white">El Muro</h2>
         <p class="header-enter body-sm text-text-secondary mt-2" style="animation-delay: 60ms">Ranking de las mejores defensas del torneo según goles recibidos en la fase de grupos, con el próximo rival de cada una.</p>
       </div>
       <div class="text-right">
@@ -60,7 +60,7 @@ const renderNextOpponentHtml = (entrada) => {
   if (entrada.matchStatus === 'pending-bracket') {
     return `
       <p class="text-text-secondary italic">${entrada.nextOpponentName}</p>
-      <p class="text-text-secondary text-[13px]">${entrada.nextMatchDate}</p>
+      <p class="text-text-secondary text-[0.8125rem]">${entrada.nextMatchDate}</p>
     `;
   }
 
@@ -69,13 +69,13 @@ const renderNextOpponentHtml = (entrada) => {
       <span class="text-text-secondary">vs</span>
       ${renderTeamHtml(entrada.nextOpponentName, entrada.nextOpponentFlag)}
     </p>
-    <p class="text-text-secondary text-[13px]">${entrada.nextMatchDate}</p>
+    <p class="text-text-secondary text-[0.8125rem]">${entrada.nextMatchDate}</p>
   `;
 };
 
 const renderRankingCardHtml = (entrada, indice) => `
   <article
-    class="card-enter ticket-card relative overflow-hidden glass rounded-[20px] pl-6 pr-5 py-5 grid grid-cols-[minmax(0,1fr)_160px_minmax(0,1fr)] items-center gap-4"
+    class="card-enter ticket-card relative overflow-hidden glass rounded-[20px] pl-6 pr-5 py-5 grid grid-cols-[minmax(0,1fr)_10rem_minmax(0,1fr)] items-center gap-4"
     style="animation-delay: ${indice * 40}ms"
     data-team-id="${entrada.teamId}"
     tabindex="0"
@@ -87,12 +87,12 @@ const renderRankingCardHtml = (entrada, indice) => `
       ${renderTeamHtml(entrada.teamName, entrada.teamFlag)}
     </div>
 
-    <div class="font-mono text-[15px] leading-5 flex items-center gap-2 justify-self-center text-white">
+    <div class="font-mono text-[0.9375rem] leading-5 flex items-center gap-2 justify-self-center text-white">
       <span class="text-text-secondary">${ICON_SHIELD}</span>
       <span>${entrada.goalsAgainst} GC</span>
     </div>
 
-    <div class="font-mono text-[15px] leading-5 flex flex-col items-end gap-1 justify-self-end">
+    <div class="font-mono text-[0.9375rem] leading-5 flex flex-col items-end gap-1 justify-self-end">
       ${renderNextOpponentHtml(entrada)}
     </div>
   </article>

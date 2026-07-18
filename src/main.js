@@ -1,3 +1,4 @@
+import { initFontScale } from './utils/fontScale.js';
 import { isAuthenticated, clearAuth, getUser } from './state/appState.js';
 import { ApiError } from './api/httpClient.js';
 import { renderLoginScreen } from './ui/loginForm.js';
@@ -227,7 +228,7 @@ const renderAnaliticaDeEstadios = async (container) => {
 const renderRutaDelCampeon = async (container) => {
   container.innerHTML = `
     <div class="mt-6 mb-6">
-      <h2 class="header-enter font-display text-[26px] leading-[30px] font-bold text-white">La Ruta del Campeón</h2>
+      <h2 class="header-enter font-display text-[1.625rem] leading-[1.875rem] font-bold text-white">La Ruta del Campeón</h2>
       <p class="header-enter body-sm text-text-secondary mt-2" style="animation-delay: 60ms">Itinerario completo de partidos, estadios y ciudades visitadas por el equipo seleccionado.</p>
     </div>
     <div id="team-selector-slot" class="max-w-xs"></div>
@@ -521,6 +522,10 @@ const iniciarApp = async () => {
 
   await renderVistaActiva(viewSlot);
 };
+
+// RF-A11Y-03: se aplica antes de renderizar nada (login o app) para que no haya parpadeo
+// visible de "normal" a "ajustado" cuando ya hay una preferencia guardada en localStorage.
+initFontScale();
 
 if (isAuthenticated()) {
   iniciarApp();

@@ -17,7 +17,7 @@ export const renderDrawsMatrixShell = (container, totalCount) => {
   container.innerHTML = `
     <div class="flex flex-wrap items-start justify-between gap-4 mt-6 mb-6">
       <div class="flex-1 min-w-[240px]">
-        <h2 class="header-enter font-display text-[26px] leading-[30px] font-bold text-white">Radar de Empates</h2>
+        <h2 class="header-enter font-display text-[1.625rem] leading-[1.875rem] font-bold text-white">Radar de Empates</h2>
         <p class="header-enter body-sm text-text-secondary mt-2" style="animation-delay: 60ms">Partidos empatados del torneo, agrupados por grupo.</p>
       </div>
       <div class="text-right">
@@ -68,9 +68,9 @@ const renderDrawCellHtml = (draw, indice) => `
 
     <div class="border-t border-dashed border-white/[0.16]"></div>
 
-    <div class="font-mono text-[15px] leading-5 flex items-center justify-between">
+    <div class="font-mono text-[0.9375rem] leading-5 flex items-center justify-between">
       <p class="text-white">${draw.score} - ${draw.score}</p>
-      <p class="text-text-secondary text-[13px]">${draw.localDate}</p>
+      <p class="text-text-secondary text-[0.8125rem]">${draw.localDate}</p>
     </div>
   </article>
 `;

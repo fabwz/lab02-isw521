@@ -9,7 +9,7 @@ export const renderGoalsList = (container, { matches, totalCount }) => {
   container.innerHTML = `
     <div class="flex flex-wrap items-start justify-between gap-4 mt-6 mb-6">
       <div class="flex-1 min-w-[240px]">
-        <h2 class="header-enter font-display text-[26px] leading-[30px] font-bold text-white">Rastreador de Goleadas</h2>
+        <h2 class="header-enter font-display text-[1.625rem] leading-[1.875rem] font-bold text-white">Rastreador de Goleadas</h2>
         <p class="header-enter body-sm text-text-secondary mt-2" style="animation-delay: 60ms">Partidos con diferencia de gol de 3 o más, ordenados de mayor a menor goleada.</p>
       </div>
       <div class="text-right">
@@ -70,7 +70,7 @@ const renderCardHtml = (match, indice) => `
 
     <div class="border-t border-dashed border-white/[0.16]"></div>
 
-    <div class="font-mono text-[15px] leading-5 flex items-center justify-between">
+    <div class="font-mono text-[0.9375rem] leading-5 flex items-center justify-between">
       <p class="text-white">${match.homeScore} - ${match.awayScore}</p>
       <p class="flex items-center gap-2 text-text-secondary">
         <span>${ICON_ZAP}</span>
@@ -78,7 +78,7 @@ const renderCardHtml = (match, indice) => `
       </p>
     </div>
 
-    <p class="font-mono text-[13px] text-text-secondary">${match.localDate}</p>
+    <p class="font-mono text-[0.8125rem] text-text-secondary">${match.localDate}</p>
   </article>
 `;
 

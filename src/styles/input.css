@@ -2,6 +2,17 @@
 @tailwind components;
 @tailwind utilities;
 
+/* RF-A11Y-03: escala global de tamaño de texto (A- / A / A+). Toda la tipografía del
+   proyecto usa rem (ver escala tipográfica abajo), así que cambiar esta única variable
+   en :root escala proporcionalmente toda la app — ver utils/fontScale.js. */
+:root {
+  --user-font-scale: 1;
+}
+
+html {
+  font-size: calc(16px * var(--user-font-scale));
+}
+
 @layer components {
   .glass {
     @apply bg-white/[0.06] backdrop-blur-glass border border-white/[0.14] shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_8px_32px_rgba(0,0,0,0.35)];
@@ -13,10 +24,10 @@
 
   /* Escala tipográfica (DESIGN.md sección 2) — tokens usados en toda la UI. */
   .display-xl {
-    @apply font-display font-extrabold text-[44px] leading-[48px];
+    @apply font-display font-extrabold text-[2.75rem] leading-[3rem];
   }
   .display-md {
-    @apply font-display font-bold text-[26px] leading-[30px];
+    @apply font-display font-bold text-[1.625rem] leading-[1.875rem];
   }
   .body-md {
     @apply font-body text-base leading-6;
@@ -25,10 +36,10 @@
     @apply font-body font-medium text-sm leading-5;
   }
   .mono-md {
-    @apply font-mono text-[15px] leading-5;
+    @apply font-mono text-[0.9375rem] leading-5;
   }
   .mono-lg {
-    @apply font-mono text-[28px] leading-8;
+    @apply font-mono text-[1.75rem] leading-8;
   }
 }
 

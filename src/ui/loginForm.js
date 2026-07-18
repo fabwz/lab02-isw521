@@ -29,7 +29,7 @@ export const renderLoginForm = (container, { onSuccess, subtitle, alertMessage }
     <form class="glass rounded-3xl p-8 w-full max-w-[380px] flex flex-col gap-5 ${clasesBorde}" novalidate>
       ${alertMessage ? `<p class="body-sm text-alert font-semibold text-center -mb-1">${alertMessage}</p>` : ''}
       <div>
-        <h1 class="font-display text-[26px] leading-[30px] font-bold text-white">Iniciar sesión</h1>
+        <h1 class="font-display text-[1.625rem] leading-[1.875rem] font-bold text-white">Iniciar sesión</h1>
         ${subtitle ? `<p class="body-sm text-text-secondary mt-2">${subtitle}</p>` : ''}
       </div>
 

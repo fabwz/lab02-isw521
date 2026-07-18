@@ -1,3 +1,5 @@
+import { renderAccessibilityPanel } from './accessibilityPanel.js';
+
 const ICON_CHEVRON_DOWN = `
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
 `;
@@ -40,6 +42,10 @@ export const renderAccountMenu = (container, user, { onLogout } = {}) => {
 
         <div class="border-t border-dashed border-white/[0.16]"></div>
 
+        <div class="account-accessibility-slot"></div>
+
+        <div class="border-t border-dashed border-white/[0.16]"></div>
+
         <button
           type="button"
           class="account-logout flex items-center gap-2 body-sm text-text-secondary hover:text-alert transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-magenta focus-visible:outline-offset-2 rounded-lg"
@@ -54,6 +60,9 @@ export const renderAccountMenu = (container, user, { onLogout } = {}) => {
   const trigger = container.querySelector('.account-trigger');
   const dropdown = container.querySelector('.account-dropdown');
   const botonSalir = container.querySelector('.account-logout');
+  const accessibilitySlot = container.querySelector('.account-accessibility-slot');
+
+  renderAccessibilityPanel(accessibilitySlot);
 
   const abrir = () => {
     dropdown.classList.remove('hidden');

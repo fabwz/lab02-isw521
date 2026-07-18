@@ -19,7 +19,7 @@ const renderBarRow = ({ label, value, maxValue, gradientClass }) => {
       <div class="flex-1 h-3 rounded-full bg-white/[0.06] overflow-hidden">
         <div class="h-full rounded-full ${gradientClass}" style="width: ${anchoPorcentaje}%"></div>
       </div>
-      <span class="font-mono text-[13px] text-white w-20 shrink-0 text-right">${formatNumber(value)}</span>
+      <span class="font-mono text-[0.8125rem] text-white w-20 shrink-0 text-right">${formatNumber(value)}</span>
     </div>
   `;
 };
@@ -62,7 +62,7 @@ const renderStadiumCardHtml = (stadium, indice, maxCapacity, maxGameCount) => `
     <header class="flex items-start justify-between gap-3">
       <div>
         <h3 class="font-display font-bold text-white">${stadium.name}</h3>
-        <p class="font-mono text-[13px] text-text-secondary">${stadium.cityCountry}</p>
+        <p class="font-mono text-[0.8125rem] text-text-secondary">${stadium.cityCountry}</p>
       </div>
       <div class="text-right shrink-0">
         <p class="body-sm text-text-secondary">Asistencia potencial</p>
@@ -85,7 +85,7 @@ export const renderStadiumsChart = (container, { stadiums }) => {
     <div class="mt-6 mb-6">
       <div class="flex flex-wrap items-start justify-between gap-4">
         <div class="flex items-center gap-3">
-          <h2 class="header-enter font-display text-[26px] leading-[30px] font-bold text-white">Analítica de Estadios</h2>
+          <h2 class="header-enter font-display text-[1.625rem] leading-[1.875rem] font-bold text-white">Analítica de Estadios</h2>
         </div>
         <div class="flex items-center gap-2 text-text-secondary">
           ${ICON_USERS}
