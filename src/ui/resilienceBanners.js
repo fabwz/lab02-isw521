@@ -1,3 +1,5 @@
+import { t } from '../utils/i18n.js';
+
 // teams/games/stadiums se piden en paralelo y cada uno corre su propio
 // backoff: un `hide` global podía borrar el chip de otro dataset que seguía
 // reintentando, así que cada show/hide recibe un `source` y el chip solo se
@@ -24,7 +26,7 @@ export const showRateLimitBanner = (source, segundosRestantes) => {
     chip429.className = 'glass rounded-2xl px-4 py-3 flex items-center gap-3 banner-enter';
     chip429.innerHTML = `
       <span class="font-mono text-[1.75rem] leading-[2rem] font-medium text-signal" data-role="seconds"></span>
-      <span class="body-sm text-text-secondary leading-tight">Límite de tasa<br />reintentando en</span>
+      <span class="body-sm text-text-secondary leading-tight">${t('banner.rateLimit')}</span>
     `;
     getContenedor().appendChild(chip429);
   }
@@ -54,7 +56,7 @@ export const showServerErrorBanner = (source, delayMs) => {
     chip500 = document.createElement('div');
     chip500.className = 'glass rounded-2xl px-4 py-3 flex flex-col gap-2 w-64 banner-enter';
     chip500.innerHTML = `
-      <span class="body-sm text-text-secondary">Error de servidor · reintentando conexión...</span>
+      <span class="body-sm text-text-secondary">${t('banner.serverError')}</span>
       <div class="h-1 w-full rounded-full bg-white/[0.08] overflow-hidden">
         <div data-role="bar" class="h-full rounded-full bg-gradient-to-r from-signal to-transparent"></div>
       </div>
@@ -101,7 +103,7 @@ export const showCacheBanner = (source, timestampMs) => {
     chipCache.className = 'glass rounded-full px-4 py-2 flex items-center gap-2 banner-enter';
     chipCache.innerHTML = `
       <span class="w-2 h-2 rounded-full bg-signal animate-pulse-slow shrink-0"></span>
-      <span class="body-sm text-text-secondary">Datos no actualizados · <span data-role="time" class="font-mono"></span></span>
+      <span class="body-sm text-text-secondary">${t('banner.staleData')} <span data-role="time" class="font-mono"></span></span>
     `;
     getContenedor().appendChild(chipCache);
   }
