@@ -1,4 +1,5 @@
 import { formatGroupLabel, animateCountUp } from '../utils/format.js';
+import { t } from '../utils/i18n.js';
 
 // Ícono Lucide como SVG inline (CLAUDE.md 2), nunca el paquete npm ni el script CDN.
 const ICON_ZAP = `
@@ -9,11 +10,11 @@ export const renderGoalsList = (container, { matches, totalCount }) => {
   container.innerHTML = `
     <div class="flex flex-wrap items-start justify-between gap-4 mt-6 mb-6">
       <div class="flex-1 min-w-[240px]">
-        <h2 class="header-enter font-display text-[1.625rem] leading-[1.875rem] font-bold text-white">Rastreador de Goleadas</h2>
-        <p class="header-enter body-sm text-text-secondary mt-2" style="animation-delay: 60ms">Partidos con diferencia de gol de 3 o más, ordenados de mayor a menor goleada.</p>
+        <h2 class="header-enter font-display text-[1.625rem] leading-[1.875rem] font-bold text-white">${t('goals.title')}</h2>
+        <p class="header-enter body-sm text-text-secondary mt-2" style="animation-delay: 60ms">${t('goals.description')}</p>
       </div>
       <div class="text-right">
-        <p class="body-sm text-text-secondary">Goleadas encontradas</p>
+        <p class="body-sm text-text-secondary">${t('goals.found')}</p>
         <p class="font-display font-extrabold text-4xl bg-gradient-accent bg-clip-text text-transparent" data-goals-count>0</p>
       </div>
     </div>
