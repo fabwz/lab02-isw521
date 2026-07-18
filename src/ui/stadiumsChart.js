@@ -1,4 +1,5 @@
 import { animateCountUp } from '../utils/format.js';
+import { t } from '../utils/i18n.js';
 
 // Ícono Lucide como SVG inline (CLAUDE.md 2), nunca el paquete npm ni el script CDN.
 const ICON_USERS = `
@@ -32,17 +33,17 @@ const renderGamesRow = (stadium, maxGameCount) => {
   if (stadium.gameCount === null) {
     return `
       <div class="flex items-center gap-3" data-games-row data-games-status="pending">
-        <span class="body-sm text-text-secondary w-20 shrink-0">Partidos</span>
+        <span class="body-sm text-text-secondary w-20 shrink-0">${t('stadiums.games')}</span>
         <div class="flex-1 h-3 rounded-full bg-white/[0.06] overflow-hidden">
           <div class="h-full w-1/4 rounded-full bg-gradient-accent animate-pulse"></div>
         </div>
-        <span class="body-sm text-text-secondary w-20 shrink-0 text-right">Esperando…</span>
+        <span class="body-sm text-text-secondary w-20 shrink-0 text-right">${t('stadiums.waiting')}</span>
       </div>
     `;
   }
   return `
     <div data-games-row data-games-status="ready">
-      ${renderBarRow({ label: 'Partidos', value: stadium.gameCount, maxValue: maxGameCount, gradientClass: 'bg-gradient-accent' })}
+      ${renderBarRow({ label: t('stadiums.games'), value: stadium.gameCount, maxValue: maxGameCount, gradientClass: 'bg-gradient-accent' })}
     </div>
   `;
 };
@@ -65,13 +66,13 @@ const renderStadiumCardHtml = (stadium, indice, maxCapacity, maxGameCount) => `
         <p class="font-mono text-[0.8125rem] text-text-secondary">${stadium.cityCountry}</p>
       </div>
       <div class="text-right shrink-0">
-        <p class="body-sm text-text-secondary">Asistencia potencial</p>
+        <p class="body-sm text-text-secondary">${t('stadiums.potentialAttendance')}</p>
         <p>${renderAttendanceHtml(stadium)}</p>
       </div>
     </header>
 
     <div class="flex flex-col gap-2">
-      ${renderBarRow({ label: 'Aforo', value: stadium.capacity, maxValue: maxCapacity, gradientClass: 'bg-gradient-accent-data' })}
+      ${renderBarRow({ label: t('stadiums.capacity'), value: stadium.capacity, maxValue: maxCapacity, gradientClass: 'bg-gradient-accent-data' })}
       ${renderGamesRow(stadium, maxGameCount)}
     </div>
   </article>
@@ -85,14 +86,14 @@ export const renderStadiumsChart = (container, { stadiums }) => {
     <div class="mt-6 mb-6">
       <div class="flex flex-wrap items-start justify-between gap-4">
         <div class="flex items-center gap-3">
-          <h2 class="header-enter font-display text-[1.625rem] leading-[1.875rem] font-bold text-white">Analítica de Estadios</h2>
+          <h2 class="header-enter font-display text-[1.625rem] leading-[1.875rem] font-bold text-white">${t('stadiums.title')}</h2>
         </div>
         <div class="flex items-center gap-2 text-text-secondary">
           ${ICON_USERS}
-          <span class="body-sm">Capacidad vs. partidos albergados</span>
+          <span class="body-sm">${t('stadiums.capacityVsGames')}</span>
         </div>
       </div>
-      <p class="header-enter body-sm text-text-secondary mt-2" style="animation-delay: 60ms">Comparativa de aforo y partidos albergados por estadio, con la asistencia potencial estimada.</p>
+      <p class="header-enter body-sm text-text-secondary mt-2" style="animation-delay: 60ms">${t('stadiums.description')}</p>
     </div>
 
     <div class="grid gap-4 sm:grid-cols-2">
@@ -132,8 +133,8 @@ export const markGamesUnavailableForStadiumsChart = (container) => {
   filas.forEach((fila) => {
     fila.dataset.gamesStatus = 'unavailable';
     fila.innerHTML = `
-      <span class="body-sm text-text-secondary w-20 shrink-0">Partidos</span>
-      <span class="body-sm text-signal flex-1">Esperando datos de partidos…</span>
+      <span class="body-sm text-text-secondary w-20 shrink-0">${t('stadiums.games')}</span>
+      <span class="body-sm text-signal flex-1">${t('stadiums.waitingGamesData')}</span>
     `;
   });
 };
