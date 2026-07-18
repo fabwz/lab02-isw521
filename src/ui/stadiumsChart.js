@@ -52,7 +52,7 @@ const renderAttendanceHtml = (stadium) =>
 
 const renderStadiumCardHtml = (stadium, indice, maxCapacity, maxGameCount) => `
   <article
-    class="glass rounded-[20px] p-5 flex flex-col gap-4"
+    class="ticket-card glass rounded-[20px] p-5 flex flex-col gap-4"
     style="animation-delay: ${indice * 40}ms"
     data-stadium-id="${stadium.id}"
   >

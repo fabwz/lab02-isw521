@@ -43,8 +43,8 @@ const renderGroupSectionHtml = ({ group, draws }) => `
 `;
 
 const renderDrawCellHtml = (draw) => `
-  <article class="relative overflow-hidden glass rounded-[16px] pl-5 pr-4 py-4 flex flex-col gap-2" data-match-id="${draw.id}">
-    <span class="absolute inset-y-0 left-0 w-[3px] bg-gradient-to-b from-violet to-magenta"></span>
+  <article class="ticket-card relative overflow-hidden glass rounded-[16px] pl-5 pr-4 py-4 flex flex-col gap-2" data-match-id="${draw.id}">
+    <span class="ticket-card-accent absolute inset-y-0 left-0 w-[3px] bg-gradient-to-b from-violet to-magenta"></span>
 
     <div class="font-display font-bold text-white flex items-center justify-between gap-2 flex-wrap">
       ${renderTeamHtml(draw.homeTeamName, draw.homeTeamFlag)}
