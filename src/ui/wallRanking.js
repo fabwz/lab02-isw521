@@ -74,7 +74,7 @@ const renderNextOpponentHtml = (entrada) => {
 
 const renderRankingCardHtml = (entrada, indice) => `
   <article
-    class="card-enter ticket-card relative overflow-hidden glass rounded-[20px] pl-6 pr-5 py-5 flex flex-wrap items-center justify-between gap-4"
+    class="card-enter ticket-card relative overflow-hidden glass rounded-[20px] pl-6 pr-5 py-5 grid grid-cols-[minmax(0,1fr)_160px_minmax(0,1fr)] items-center gap-4"
     style="animation-delay: ${indice * 40}ms"
     data-team-id="${entrada.teamId}"
   >
@@ -89,7 +89,7 @@ const renderRankingCardHtml = (entrada, indice) => `
     de la fase de grupos (ver buildGoalsAgainstRanking en wallService.js), así que el número
     no representa goles recibidos en todo el torneo — sin esta aclaración es fácil leerlo mal
     en la demo/defensa oral. -->
-    <div class="font-mono text-[15px] leading-5 flex flex-col items-end gap-1">
+    <div class="font-mono text-[15px] leading-5 flex flex-col items-center gap-1 justify-self-center">
       <span class="flex items-center gap-2 text-white">
         <span class="text-text-secondary">${ICON_SHIELD}</span>
         <span>${entrada.goalsAgainst} GC</span>
@@ -97,7 +97,7 @@ const renderRankingCardHtml = (entrada, indice) => `
       <span class="text-text-secondary text-[13px]">(fase de grupos)</span>
     </div>
 
-    <div class="font-mono text-[15px] leading-5 flex flex-col items-end gap-1">
+    <div class="font-mono text-[15px] leading-5 flex flex-col items-end gap-1 justify-self-end">
       ${renderNextOpponentHtml(entrada)}
     </div>
   </article>
