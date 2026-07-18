@@ -39,7 +39,7 @@ const renderGamesRow = (stadium, maxGameCount) => {
     `;
   }
   return `
-    <div class="flex items-center gap-3" data-games-row data-games-status="ready">
+    <div data-games-row data-games-status="ready">
       ${renderBarRow({ label: 'Partidos', value: stadium.gameCount, maxValue: maxGameCount, gradientClass: 'bg-gradient-accent' })}
     </div>
   `;
