@@ -50,7 +50,7 @@ export const mountDevToolsPanel = ({
 
   const panel = document.createElement('div');
   panel.className =
-    'fixed bottom-16 right-4 z-50 glass rounded-xl p-3 flex flex-col gap-2 w-64 hidden';
+    'fixed bottom-16 right-4 z-50 glass rounded-xl p-3 flex flex-col gap-2 w-64 max-h-[70vh] overflow-y-auto hidden';
   panel.setAttribute('role', 'menu');
 
   const titulo = document.createElement('p');
