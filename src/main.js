@@ -227,8 +227,8 @@ const renderAnaliticaDeEstadios = async (container) => {
 const renderRutaDelCampeon = async (container) => {
   container.innerHTML = `
     <div class="mt-6 mb-6">
-      <h2 class="font-display text-[26px] leading-[30px] font-bold text-white">La Ruta del Campeón</h2>
-      <p class="body-sm text-text-secondary mt-2">Itinerario completo de partidos, estadios y ciudades visitadas por el equipo seleccionado.</p>
+      <h2 class="header-enter font-display text-[26px] leading-[30px] font-bold text-white">La Ruta del Campeón</h2>
+      <p class="header-enter body-sm text-text-secondary mt-2" style="animation-delay: 60ms">Itinerario completo de partidos, estadios y ciudades visitadas por el equipo seleccionado.</p>
     </div>
     <div id="team-selector-slot" class="max-w-xs"></div>
     <div id="itinerary-slot"></div>
@@ -484,6 +484,9 @@ const iniciarApp = async () => {
   const viewSlot = app.querySelector('#view-slot');
   const navbarSlot = app.querySelector('#navbar-slot');
 
+  // Transición entre subproyectos (DESIGN.md sección 6): fade-out breve de la vista saliente
+  // antes de reemplazar el contenido, fade-in de la entrante — nunca un cambio instantáneo.
+  // Se desactiva junto con el resto del motion bajo prefers-reduced-motion.
   const seleccionarProyecto = async (proyectoId) => {
     if (proyectoId === vistaActiva) return;
     vistaActiva = proyectoId;
@@ -492,7 +495,22 @@ const iniciarApp = async () => {
       activeProjectId: vistaActiva,
       onProjectSelected: seleccionarProyecto,
     });
+
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!prefersReducedMotion) {
+      viewSlot.classList.add('view-fade-out', 'is-hidden');
+      await espera(120);
+    }
+
     await renderVistaActiva(viewSlot);
+
+    if (!prefersReducedMotion) {
+      viewSlot.classList.remove('view-fade-out', 'is-hidden');
+      viewSlot.classList.add('view-fade-in');
+      const quitarClase = () => viewSlot.classList.remove('view-fade-in');
+      viewSlot.addEventListener('animationend', quitarClase, { once: true });
+      setTimeout(quitarClase, 300);
+    }
   };
 
   renderNavbar(navbarSlot, getUser(), {

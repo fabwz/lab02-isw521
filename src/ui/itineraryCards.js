@@ -1,4 +1,4 @@
-import { formatGroupLabel } from '../utils/format.js';
+import { formatGroupLabel, animateCountUp } from '../utils/format.js';
 
 // Íconos Lucide como SVG inline (CLAUDE.md 2), nunca el paquete npm ni el script CDN.
 const ICON_CALENDAR = `
@@ -23,7 +23,7 @@ export const renderItineraryCards = (container, teamName, teamFlag, { matches, c
       </div>
       <div class="text-right">
         <p class="body-sm text-text-secondary">Ciudades visitadas</p>
-        <p class="font-display font-extrabold text-4xl bg-gradient-accent bg-clip-text text-transparent">${citiesVisitedCount}</p>
+        <p class="font-display font-extrabold text-4xl bg-gradient-accent bg-clip-text text-transparent" data-cities-count>0</p>
       </div>
     </div>
 
@@ -32,6 +32,7 @@ export const renderItineraryCards = (container, teamName, teamFlag, { matches, c
     </div>
   `;
   releaseCardEnterClass(container);
+  animateCountUp(container.querySelector('[data-cities-count]'), citiesVisitedCount);
 };
 
 // `animation-fill-mode: both` deja el transform del último frame por encima del

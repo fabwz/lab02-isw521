@@ -11,3 +11,25 @@ const ROUND_LABELS = {
 export const formatGroupLabel = (group) => {
   return ROUND_LABELS[group] ?? `Grupo ${group}`;
 };
+
+// Conteo animado (0 → targetValue) para los números destacados de cada vista (ciudades
+// visitadas, empates encontrados, total de goleadas, asistencia potencial). Reusada por las
+// 5 vistas en vez de duplicar la lógica de conteo en cada una. Respeta prefers-reduced-motion
+// mostrando el valor final de una vez, igual que el resto de animaciones del proyecto.
+export const animateCountUp = (element, targetValue, { duration = 500 } = {}) => {
+  if (!element) return;
+
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (prefersReducedMotion || !(targetValue > 0)) {
+    element.textContent = targetValue.toLocaleString('es-CR');
+    return;
+  }
+
+  const inicioMs = performance.now();
+  const pintarCuadro = (ahoraMs) => {
+    const progreso = Math.min((ahoraMs - inicioMs) / duration, 1);
+    element.textContent = Math.round(targetValue * progreso).toLocaleString('es-CR');
+    if (progreso < 1) requestAnimationFrame(pintarCuadro);
+  };
+  requestAnimationFrame(pintarCuadro);
+};

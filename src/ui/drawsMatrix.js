@@ -1,25 +1,34 @@
+import { animateCountUp } from '../utils/format.js';
+
 // RF-RE-03/04: matriz visual de empates agrupada por grupo, con contador por grupo.
 // RF-RE-R: la matriz se pinta de forma INCREMENTAL (grupo por grupo, ver renderDrawsMatrixShell +
 // appendDrawsGroupSection), nunca de un solo golpe — así un 429 a mitad de la secuencia puede
 // dejar ver los grupos ya pintados sin destruirlos, en vez de re-renderizar toda la matriz.
 
+// Índice global de tarjetas de empate ya pintadas, usado para escalonar su animation-delay
+// (card-enter) de forma continua a través de los grupos agregados incrementalmente. Se
+// reinicia en cada llamada a renderDrawsMatrixShell (nueva construcción de la matriz).
+let indiceGlobalDeTarjeta = 0;
+
 // Pinta el encabezado (título + contador total) y deja el contenedor de grupos vacío, listo
 // para recibir secciones una por una vía appendDrawsGroupSection.
 export const renderDrawsMatrixShell = (container, totalCount) => {
+  indiceGlobalDeTarjeta = 0;
   container.innerHTML = `
     <div class="flex flex-wrap items-start justify-between gap-4 mt-6 mb-6">
       <div class="flex-1 min-w-[240px]">
-        <h2 class="font-display text-[26px] leading-[30px] font-bold text-white">Radar de Empates</h2>
-        <p class="body-sm text-text-secondary mt-2">Partidos empatados del torneo, agrupados por grupo.</p>
+        <h2 class="header-enter font-display text-[26px] leading-[30px] font-bold text-white">Radar de Empates</h2>
+        <p class="header-enter body-sm text-text-secondary mt-2" style="animation-delay: 60ms">Partidos empatados del torneo, agrupados por grupo.</p>
       </div>
       <div class="text-right">
         <p class="body-sm text-text-secondary">Empates encontrados</p>
-        <p class="font-display font-extrabold text-4xl bg-gradient-accent bg-clip-text text-transparent">${totalCount}</p>
+        <p class="font-display font-extrabold text-4xl bg-gradient-accent bg-clip-text text-transparent" data-draws-count>0</p>
       </div>
     </div>
 
     <div id="draws-groups-slot" class="flex flex-col gap-6"></div>
   `;
+  animateCountUp(container.querySelector('[data-draws-count]'), totalCount);
 };
 
 const renderTeamHtml = (name, flag) => `
@@ -37,13 +46,17 @@ const renderGroupSectionHtml = ({ group, draws }) => `
     </header>
 
     <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-      ${draws.map(renderDrawCellHtml).join('')}
+      ${draws.map((draw) => renderDrawCellHtml(draw, indiceGlobalDeTarjeta++)).join('')}
     </div>
   </section>
 `;
 
-const renderDrawCellHtml = (draw) => `
-  <article class="ticket-card relative overflow-hidden glass rounded-[16px] pl-5 pr-4 py-4 flex flex-col gap-2" data-match-id="${draw.id}">
+const renderDrawCellHtml = (draw, indice) => `
+  <article
+    class="card-enter ticket-card relative overflow-hidden glass rounded-[16px] pl-5 pr-4 py-4 flex flex-col gap-2"
+    style="animation-delay: ${indice * 40}ms"
+    data-match-id="${draw.id}"
+  >
     <span class="ticket-card-accent absolute inset-y-0 left-0 w-[3px] bg-gradient-to-b from-violet to-magenta"></span>
 
     <div class="font-display font-bold text-white flex items-center justify-between gap-2 flex-wrap">
@@ -61,8 +74,25 @@ const renderDrawCellHtml = (draw) => `
   </article>
 `;
 
+// `animation-fill-mode: both` deja el transform del último frame por encima del hover de
+// .ticket-card sin importar especificidad, así que hay que quitar la clase al terminar
+// (mismo patrón que itineraryCards.js/goalsList.js/wallRanking.js).
+const releaseCardEnterClass = (seccion) => {
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  seccion.querySelectorAll('.card-enter').forEach((tarjeta) => {
+    if (prefersReducedMotion) {
+      tarjeta.classList.remove('card-enter');
+      return;
+    }
+    const quitarClase = () => tarjeta.classList.remove('card-enter');
+    tarjeta.addEventListener('animationend', quitarClase, { once: true });
+    setTimeout(quitarClase, 400);
+  });
+};
+
 // RF-RE-R: agrega UN grupo al contenedor ya existente, sin tocar los grupos ya pintados.
 // `groupsSlot` es el nodo `#draws-groups-slot` devuelto por renderDrawsMatrixShell.
 export const appendDrawsGroupSection = (groupsSlot, group) => {
   groupsSlot.insertAdjacentHTML('beforeend', renderGroupSectionHtml(group));
+  releaseCardEnterClass(groupsSlot.lastElementChild);
 };

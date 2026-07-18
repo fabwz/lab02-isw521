@@ -1,3 +1,5 @@
+import { animateCountUp } from '../utils/format.js';
+
 // Ícono Lucide como SVG inline (CLAUDE.md 2), nunca el paquete npm ni el script CDN.
 const ICON_USERS = `
   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
@@ -48,11 +50,11 @@ const renderGamesRow = (stadium, maxGameCount) => {
 const renderAttendanceHtml = (stadium) =>
   stadium.potentialAttendance === null
     ? '<span class="font-mono font-semibold text-lg text-text-secondary" data-attendance-value>—</span>'
-    : `<span class="font-mono font-semibold text-lg bg-gradient-accent-data bg-clip-text text-transparent" data-attendance-value>${formatNumber(stadium.potentialAttendance)}</span>`;
+    : `<span class="font-mono font-semibold text-lg bg-gradient-accent-data bg-clip-text text-transparent" data-attendance-value>0</span>`;
 
 const renderStadiumCardHtml = (stadium, indice, maxCapacity, maxGameCount) => `
   <article
-    class="ticket-card glass rounded-[20px] p-5 flex flex-col gap-4"
+    class="card-enter ticket-card glass rounded-[20px] p-5 flex flex-col gap-4"
     style="animation-delay: ${indice * 40}ms"
     data-stadium-id="${stadium.id}"
   >
@@ -82,20 +84,42 @@ export const renderStadiumsChart = (container, { stadiums }) => {
     <div class="mt-6 mb-6">
       <div class="flex flex-wrap items-start justify-between gap-4">
         <div class="flex items-center gap-3">
-          <h2 class="font-display text-[26px] leading-[30px] font-bold text-white">Analítica de Estadios</h2>
+          <h2 class="header-enter font-display text-[26px] leading-[30px] font-bold text-white">Analítica de Estadios</h2>
         </div>
         <div class="flex items-center gap-2 text-text-secondary">
           ${ICON_USERS}
           <span class="body-sm">Capacidad vs. partidos albergados</span>
         </div>
       </div>
-      <p class="body-sm text-text-secondary mt-2">Comparativa de aforo y partidos albergados por estadio, con la asistencia potencial estimada.</p>
+      <p class="header-enter body-sm text-text-secondary mt-2" style="animation-delay: 60ms">Comparativa de aforo y partidos albergados por estadio, con la asistencia potencial estimada.</p>
     </div>
 
     <div class="grid gap-4 sm:grid-cols-2">
       ${stadiums.map((stadium, indice) => renderStadiumCardHtml(stadium, indice, maxCapacity, maxGameCount)).join('')}
     </div>
   `;
+  releaseCardEnterClass(container);
+  stadiums.forEach((stadium) => {
+    if (stadium.potentialAttendance === null) return;
+    const valorSpan = container.querySelector(`[data-stadium-id="${stadium.id}"] [data-attendance-value]`);
+    animateCountUp(valorSpan, stadium.potentialAttendance);
+  });
+};
+
+// `animation-fill-mode: both` deja el transform del último frame por encima del hover de
+// .ticket-card sin importar especificidad, así que hay que quitar la clase al terminar
+// (mismo patrón que itineraryCards.js/goalsList.js/wallRanking.js).
+const releaseCardEnterClass = (container) => {
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  container.querySelectorAll('.card-enter').forEach((tarjeta) => {
+    if (prefersReducedMotion) {
+      tarjeta.classList.remove('card-enter');
+      return;
+    }
+    const quitarClase = () => tarjeta.classList.remove('card-enter');
+    tarjeta.addEventListener('animationend', quitarClase, { once: true });
+    setTimeout(quitarClase, 400);
+  });
 };
 
 // RF-AE-R: cuando /get/games falla DESPUÉS de que las barras de aforo ya se dibujaron
