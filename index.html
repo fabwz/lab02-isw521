@@ -4,6 +4,27 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!--
+    frame-ancestors se omite a propósito: solo tiene efecto como encabezado
+    HTTP real (Content-Security-Policy vía respuesta del servidor), no como
+    meta tag — el navegador la ignora en este contexto y emite un warning en
+    consola si se declara aquí. Este sitio se sirve como build estático
+    (sin servidor propio que agregue encabezados), así que no hay forma de
+    enviarla como header desde este hosting.
+  -->
+  <meta
+    http-equiv="Content-Security-Policy"
+    content="
+      default-src 'self';
+      script-src 'self';
+      style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+      font-src 'self' https://fonts.gstatic.com;
+      img-src 'self' data: https://flagcdn.com;
+      connect-src 'self' https://worldcup26.ir;
+      object-src 'none';
+      base-uri 'self';
+    "
+  />
   <title>WC26 Analytics</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
