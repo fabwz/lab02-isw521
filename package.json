@@ -1,8 +1,8 @@
 {
-  "name": "la-ruta-del-campeon",
+  "name": "wc26-analytics",
   "version": "1.0.0",
   "private": true,
-  "description": "Itinerario de partidos del Mundial 2026 - ISW-521",
+  "description": "Cruce de datos y analítica del Mundial 2026 (5 subproyectos) - ISW-521",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
