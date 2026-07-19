@@ -32,6 +32,8 @@ const DICTIONARY = {
   'login.error.429': { es: 'Demasiados intentos. Espera un momento antes de volver a intentar.', en: 'Too many attempts. Wait a moment before trying again.' },
   'login.error.500': { es: 'El servidor no está disponible en este momento. Intenta de nuevo.', en: 'The server is unavailable right now. Please try again.' },
   'login.error.unexpected': { es: 'Ocurrió un error inesperado al iniciar sesión.', en: 'An unexpected error occurred while logging in.' },
+  'login.validation.emailInvalid': { es: 'Ingresa un correo válido.', en: 'Enter a valid email address.' },
+  'login.validation.passwordRequired': { es: 'La contraseña no puede estar vacía.', en: 'Password cannot be empty.' },
 
   // accountMenu.js
   'account.defaultName': { es: 'Usuario', en: 'User' },

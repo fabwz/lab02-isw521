@@ -44,6 +44,7 @@ export const renderLoginForm = (container, { onSuccess, subtitle, alertMessage }
           placeholder="${t('login.emailPlaceholder')}"
           class="bg-white/[0.04] border border-white/[0.14] rounded-xl px-4 py-3 text-white placeholder:text-text-secondary/60 outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-magenta focus-visible:outline-offset-2 transition"
         />
+        <p class="field-error hidden body-sm text-alert" role="alert"></p>
       </label>
 
       <label class="flex flex-col gap-1.5">
@@ -56,6 +57,7 @@ export const renderLoginForm = (container, { onSuccess, subtitle, alertMessage }
           placeholder="••••••••"
           class="bg-white/[0.04] border border-white/[0.14] rounded-xl px-4 py-3 text-white placeholder:text-text-secondary/60 outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-magenta focus-visible:outline-offset-2 transition"
         />
+        <p class="field-error hidden body-sm text-alert" role="alert"></p>
       </label>
 
       <p class="login-error hidden body-sm text-alert" role="alert"></p>
@@ -72,6 +74,8 @@ export const renderLoginForm = (container, { onSuccess, subtitle, alertMessage }
   const formulario = container.querySelector('form');
   const campoEmail = formulario.querySelector('input[name="email"]');
   const campoPassword = formulario.querySelector('input[name="password"]');
+  const errorEmail = campoEmail.closest('label').querySelector('.field-error');
+  const errorPassword = campoPassword.closest('label').querySelector('.field-error');
   const parrafoError = formulario.querySelector('.login-error');
   const botonEntrar = formulario.querySelector('button[type="submit"]');
 
@@ -84,9 +88,48 @@ export const renderLoginForm = (container, { onSuccess, subtitle, alertMessage }
     parrafoError.classList.add('hidden');
   };
 
+  const mostrarErrorCampo = (parrafo, mensaje) => {
+    parrafo.textContent = mensaje;
+    parrafo.classList.remove('hidden');
+  };
+
+  const ocultarErrorCampo = (parrafo) => {
+    parrafo.classList.add('hidden');
+  };
+
+  // Validación explícita en JS previa al fetch: type="email" ya da una verificación
+  // básica del navegador, pero se refuerza aquí para evitar peticiones innecesarias
+  // (ver context/requirements.md sección 16, medida 3).
+  const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  const validarFormulario = () => {
+    let esValido = true;
+
+    if (!EMAIL_REGEX.test(campoEmail.value.trim())) {
+      mostrarErrorCampo(errorEmail, t('login.validation.emailInvalid'));
+      esValido = false;
+    } else {
+      ocultarErrorCampo(errorEmail);
+    }
+
+    if (campoPassword.value.trim() === '') {
+      mostrarErrorCampo(errorPassword, t('login.validation.passwordRequired'));
+      esValido = false;
+    } else {
+      ocultarErrorCampo(errorPassword);
+    }
+
+    return esValido;
+  };
+
   formulario.addEventListener('submit', async (evento) => {
     evento.preventDefault();
     ocultarError();
+
+    if (!validarFormulario()) {
+      return;
+    }
+
     botonEntrar.disabled = true;
     botonEntrar.textContent = t('login.submitting');
 
