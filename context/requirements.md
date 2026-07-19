@@ -319,3 +319,29 @@ El profesor pidió "medidas de seguridad para toda la web" sin especificar cuál
 - ✅ La contraseña nunca se persiste en `localStorage` ni en memoria más allá del envío del formulario — solo se guarda el token JWT tras el login exitoso.
 
 > Estas medidas son una propuesta razonable ante la falta de especificación — si el profesor confirma un alcance distinto o adicional, esta sección se ampliará.
+
+---
+
+## 17. Eliminación de simuladores de desarrollo antes de la entrega final ⏳ *(pendiente, evaluar cuando el proyecto esté completo)*
+
+**Instrucción del profesor (verbal, fuera del PDF):** en la defensa, todos los errores (401, 429, 500, offline, y los 5 retos de resiliencia específicos) deben provocarse **manualmente en DevTools**, no con botones de simulación — **excepto** aquellos que sean genuinamente imposibles de reproducir así, para los cuales sí autorizó dejar un botón.
+
+### Clasificación preliminar (a re-verificar antes de decidir qué botones eliminar)
+
+| Simulador | ¿Reproducible 100% manual sin botón? | Método |
+|---|---|---|
+| 429 (agota / recupera) | ✅ Confirmado — ya probado | `fetch` con `?_=timestamp` en Consola, rompe la caché de 30s del servidor |
+| Offline/caché | ✅ Confirmado — ya probado | Bloqueo de `wc26-api/*` en "Condiciones de la solicitud" de DevTools |
+| RF-11 (estadios, 2.1) | ✅ Probable, sin confirmar aún | Bloquear selectivamente `*get/stadiums*` (dejando `teams`/`games` libres) y recargar |
+| RF-RG-R (teams, 2.2) | ✅ Probable, sin confirmar aún | Bloquear selectivamente `*get/teams*` y recargar |
+| RF-AE-R (games tras stadiums, 2.4) | ✅ Probable, sin confirmar aún | Bloquear selectivamente `*get/games*` y recargar |
+| RF-EM-R (rival de El Muro, 2.3) | ❌ No — genuino | Las 5 búsquedas de rival son cálculo en memoria sobre datos ya cacheados, no una petición de red nueva que se pueda bloquear |
+| RF-RE-R (429 a mitad de matriz, 2.5) | ❌ No — genuino | La construcción "grupo por grupo" es un bucle de renderizado del cliente con pausas artificiales, no peticiones reales por grupo |
+| 401 | ❓ Por probar | Verificar si "Override headers" de DevTools permite forzar el código de estado de una respuesta real (no solo encabezados) — depende de la versión de Chrome |
+| 500 | ❓ Por probar | Mismo método que 401 |
+
+### Plan cuando se retome esto
+1. Verificar con pruebas reales los 3 casos marcados "probable, sin confirmar" (bloqueo selectivo por endpoint).
+2. Probar "Override headers" en DevTools para 401/500 y confirmar si permite cambiar el código de estado.
+3. Con los resultados reales, decidir qué botones del panel de simuladores (`devToolsPanel.js`) se eliminan y cuáles se conservan (los que resulten genuinamente irreproducibles: al menos RF-EM-R y RF-RE-R, posiblemente 401/500 según el resultado de la prueba).
+4. Los botones que sobrevivan deben quedar claramente justificados (ej. comentario en el código) de por qué son la excepción autorizada por el profesor.
