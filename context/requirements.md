@@ -308,13 +308,14 @@ Controles ubicados dentro del **dropdown de cuenta** (`accountMenu.js`), en una 
 
 ---
 
-## 16. Requisitos de Seguridad (solicitados verbalmente, sin especificar — pendiente de detalle del profesor)
+## 16. Requisitos de Seguridad (solicitados verbalmente, sin especificar — implementación base ✅)
 
-El profesor pidió "medidas de seguridad para toda la web" sin especificar cuáles. Línea base propuesta (sujeta a confirmación):
-- Content Security Policy (meta tag) restringiendo orígenes de scripts/estilos permitidos.
-- Preferir `textContent` sobre `innerHTML` para datos provenientes de la API, como defensa contra XSS.
-- Validación básica del formulario de login (formato de correo, contraseña no vacía) del lado del cliente.
-- Confirmar que toda comunicación con la API es HTTPS (ya lo es).
-- Nunca persistir la contraseña en `localStorage` ni en memoria más allá del envío del formulario (ya es así — solo se guarda el token).
+El profesor pidió "medidas de seguridad para toda la web" sin especificar cuáles. Se implementó una línea base razonable (sigue pendiente confirmar con el profesor si esperaba algo distinto/adicional):
 
-> Esta sección se ampliará cuando el profesor especifique el alcance exacto de "seguridad" que espera evaluar.
+- ✅ **Content Security Policy** (meta tag en `index.html`): `script-src 'self'` estricto (sin inline), `style-src`/`font-src` permitiendo Google Fonts, `img-src` con el dominio exacto de banderas (`flagcdn.com`), `connect-src` con `worldcup26.ir`. `frame-ancestors` se omitió intencionalmente (solo funciona como header HTTP real, no vía `<meta>`, y no hay servidor propio que lo envíe — documentado con comentario en el código).
+- ✅ **Sanitización de contenido dinámico** (`escapeHtml()` en `utils/format.js`): aplicada a todo dato proveniente de la API que se interpola en `innerHTML` en los 5 subproyectos (nombres de equipo, estadio, ciudad/país, labels de grupo/ronda, datos de usuario). Los textos generados por la propia app (i18n, fragmentos ya validados por regex como en `translateBracketPlaceholder`) no requieren escape adicional.
+- ✅ **Validación de formulario de login** del lado del cliente: formato de correo + contraseña no vacía, antes del fetch a `/auth/authenticate`. Mensajes de error por campo (no `alert()`), traducidos vía i18n. Aplica automáticamente también al modal de sesión expirada (reutiliza el mismo `loginForm.js`).
+- ✅ Toda comunicación con la API es HTTPS (`worldcup26.ir`).
+- ✅ La contraseña nunca se persiste en `localStorage` ni en memoria más allá del envío del formulario — solo se guarda el token JWT tras el login exitoso.
+
+> Estas medidas son una propuesta razonable ante la falta de especificación — si el profesor confirma un alcance distinto o adicional, esta sección se ampliará.
