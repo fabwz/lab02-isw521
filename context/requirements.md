@@ -73,7 +73,7 @@ Esta arquitectura se construye **una sola vez** a nivel de aplicación (no se du
 
 ### RF-09 — Backoff exponencial (errores 500 y 429)
 - Ante un error `500` o `429` en la petición de **cualquier** subproyecto, reintentar automáticamente con espera creciente (1s → 2s → 4s → 8s).
-- Para `429`: mostrar un **countdown visible** en tiempo real, sin acción del usuario, nunca oculto detrás de un ícono que haya que abrir.
+- Para `429`: mostrar un **countdown visible en segundos**, en tiempo real, sin acción del usuario, nunca oculto detrás de un ícono que haya que abrir.
 - Cada subproyecto puede tener múltiples peticiones en paralelo (ej. El Muro pide 3 endpoints); cada una debe manejar su propio ciclo de backoff sin interferir con las demás (ver la lección aprendida documentada en `CLAUDE.md` sobre namespacing de banners por `source`).
 
 ### RF-10 — Modo offline con `localStorage`
