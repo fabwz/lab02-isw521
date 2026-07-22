@@ -3,9 +3,8 @@
 
 > ⚠️ **Actualización de alcance:** el enunciado original (PDF) especificaba elegir **un** subproyecto del catálogo. El profesor comunicó posteriormente (fuera del PDF) que **deben implementarse los 5 subproyectos**, con igual peso de evaluación entre ellos. Este documento refleja esa instrucción actualizada.
 >
-> ⚠️ **Requisitos adicionales fuera del PDF:** el profesor también solicitó verbalmente (1) funciones de accesibilidad (tamaño de texto, idioma de página, navegación por teclado) y (2) medidas de seguridad para toda la aplicación (sin especificar cuáles). Ver secciones 15 y 16.
+> ⚠️ **Requisitos adicionales fuera del PDF:** (1) funciones de accesibilidad (tamaño de texto, idioma de página, navegación por teclado) y (2) medidas de seguridad para toda la aplicación (sin especificar cuáles). Ver secciones 15 y 16.
 >
-> **Pendiente:** obtener confirmación **por escrito** de los 3 cambios anteriores (correo/plataforma del curso) — agruparlos en una sola comunicación con el profesor, dado que los 3 contradicen o extienden el texto literal del PDF original.
 
 ---
 
@@ -322,26 +321,32 @@ El profesor pidió "medidas de seguridad para toda la web" sin especificar cuál
 
 ---
 
-## 17. Eliminación de simuladores de desarrollo antes de la entrega final ⏳ *(pendiente, evaluar cuando el proyecto esté completo)*
+## 17. Eliminación de simuladores de desarrollo antes de la entrega final ✅ *(investigación completa — pendiente solo ejecutar la limpieza de código)*
 
 **Instrucción del profesor (verbal, fuera del PDF):** en la defensa, todos los errores (401, 429, 500, offline, y los 5 retos de resiliencia específicos) deben provocarse **manualmente en DevTools**, no con botones de simulación — **excepto** aquellos que sean genuinamente imposibles de reproducir así, para los cuales sí autorizó dejar un botón.
 
-### Clasificación preliminar (a re-verificar antes de decidir qué botones eliminar)
+### Clasificación final (las 7 pruebas están completas)
 
 | Simulador | ¿Reproducible 100% manual sin botón? | Método |
 |---|---|---|
 | 429 (agota / recupera) | ✅ Confirmado — ya probado | `fetch` con `?_=timestamp` en Consola, rompe la caché de 30s del servidor |
 | Offline/caché | ✅ Confirmado — ya probado | Bloqueo de `wc26-api/*` en "Condiciones de la solicitud" de DevTools |
-| RF-11 (estadios, 2.1) | ✅ Probable, sin confirmar aún | Bloquear selectivamente `*get/stadiums*` (dejando `teams`/`games` libres) y recargar |
-| RF-RG-R (teams, 2.2) | ✅ Probable, sin confirmar aún | Bloquear selectivamente `*get/teams*` y recargar |
-| RF-AE-R (games tras stadiums, 2.4) | ✅ Probable, sin confirmar aún | Bloquear selectivamente `*get/games*` y recargar |
-| RF-EM-R (rival de El Muro, 2.3) | ❌ No — genuino | Las 5 búsquedas de rival son cálculo en memoria sobre datos ya cacheados, no una petición de red nueva que se pueda bloquear |
-| RF-RE-R (429 a mitad de matriz, 2.5) | ❌ No — genuino | La construcción "grupo por grupo" es un bucle de renderizado del cliente con pausas artificiales, no peticiones reales por grupo |
-| 401 | ❓ Por probar | Verificar si "Override headers" de DevTools permite forzar el código de estado de una respuesta real (no solo encabezados) — depende de la versión de Chrome |
-| 500 | ❓ Por probar | Mismo método que 401 |
+| RF-11 (estadios, 2.1) | ✅ **Confirmado con prueba real** | Bloquear `http://localhost:5173/wc26-api/get/stadiums*` en "Condiciones de la solicitud" + **borrar `cache:stadiums` de Local Storage** (si no, la app usa el caché viejo y no se ve el fallo) + recargar. Verificado: tarjeta muestra "Estadio no disponible" correctamente. |
+| RF-RG-R (teams, 2.2) | ✅ **Confirmado con prueba real** | Bloquear `.../wc26-api/get/teams*` + borrar `cache:teams` + recargar + ir directo a "Rastreador de Goleadas" (la vista por defecto, "La Ruta del Campeón", sí necesita `teams` completo y mostrará un estado de error genérico — comportamiento correcto, ver bug corregido de `Promise.all`→`Promise.allSettled`). Verificado: lista se renderiza con ids crudos ("17 vs 18"), marcador/fecha/grupo/contador intactos. |
+| RF-AE-R (games tras stadiums, 2.4) | ✅ **Confirmado con prueba real** | Bloquear `.../wc26-api/get/games*` + borrar `cache:games` + recargar + ir a "Analítica de Estadios". Verificado: barras de aforo permanecen, "Asistencia potencial" en `—`, campo "Partidos" muestra "Esperando datos de partidos..." sin romper el layout. |
+| RF-EM-R (rival de El Muro, 2.3) | ❌ No — genuino | Las 5 búsquedas de rival son cálculo en memoria sobre datos ya cacheados, no una petición de red nueva que se pueda bloquear. **Se mantiene el botón de simulación.** |
+| RF-RE-R (429 a mitad de matriz, 2.5) | ❌ No — genuino | La construcción "grupo por grupo" es un bucle de renderizado del cliente con pausas artificiales, no peticiones reales por grupo. **Se mantiene el botón de simulación.** |
+| 401 | ❌ **No — excepción autorizada, investigación exhaustiva completa** | Investigado en profundidad con "Local Overrides" en **2 navegadores**: **Chrome** causó cierres inesperados del navegador de forma consistente en 3 intentos con carpetas distintas (incluida una en Descargas) — descartado por inestabilidad de la herramienta en este equipo. **Edge** sí permitió completar el flujo sin cerrarse: se accedió al archivo `.headers` de la petición y al formulario "Agregar regla de invalidación", confirmando que **solo acepta pares nombre-valor de encabezados HTTP normales** (ej. `Cache-Control`) — no existe ningún campo para el código de estado de la respuesta, y el pseudo-header `:status` tampoco funciona. Conclusión: Chromium no ofrece una vía nativa para forzar el status code de una respuesta real. Sumado a que la API real nunca devuelve 401 por sí misma (no valida JWT, confirmado desde el commit #6), **se mantiene el botón de simulación** — verificado que `/dev-mock/401` responde con el status correcto (`fetch('/dev-mock/401')` → `401`). |
+| 500 | ❌ **No — excepción autorizada** (misma limitación técnica que 401) | La investigación de "Local Overrides" (Chrome inestable en 3 intentos, Edge funcional pero sin campo de código de estado — ver fila 401) aplica **igual para cualquier código de estado**, no solo 401: el formulario de anulación de Edge nunca ofreció un campo para el status code en general, así que tampoco existiría una forma de forzar un 500 con esa herramienta. Sumado a que no se controla que el servidor real (terceros) falle a propósito, **se mantiene el botón de simulación** — verificado que `/dev-mock/500` responde con el status correcto (`fetch('/dev-mock/500')` → `500`). |
 
-### Plan cuando se retome esto
-1. Verificar con pruebas reales los 3 casos marcados "probable, sin confirmar" (bloqueo selectivo por endpoint).
-2. Probar "Override headers" en DevTools para 401/500 y confirmar si permite cambiar el código de estado.
-3. Con los resultados reales, decidir qué botones del panel de simuladores (`devToolsPanel.js`) se eliminan y cuáles se conservan (los que resulten genuinamente irreproducibles: al menos RF-EM-R y RF-RE-R, posiblemente 401/500 según el resultado de la prueba).
-4. Los botones que sobrevivan deben quedar claramente justificados (ej. comentario en el código) de por qué son la excepción autorizada por el profesor.
+### Resultado: 4 botones se eliminan, 4 se conservan (justificados)
+
+**Eliminar** (`devToolsPanel.js` y sus archivos individuales): 429-agota, 429-recupera, RF-11 (estadios), RF-RG-R (teams), RF-AE-R (games) — **5 botones**, todos confirmados 100% reproducibles con DevTools puro.
+
+**Conservar** (excepción autorizada por el profesor): RF-EM-R (rival de El Muro), RF-RE-R (429 en matriz de empates), 401, 500 — **4 botones**.
+
+### Plan de ejecución (siguiente paso: limpieza de código)
+1. Eliminar los 5 archivos/entradas de simuladores confirmados como innecesarios.
+2. Los 4 botones que sobreviven deben quedar con un comentario explícito en el código explicando por qué son la excepción (ej. *"Excepción autorizada por el profesor — este error no es reproducible con DevTools puro porque..."*).
+3. Confirmar que `devToolsPanel.js` y el mapa de atajos queden consistentes tras la eliminación (sin atajos huérfanos ni referencias rotas).
+4. `npm run build` limpio tras la limpieza.
