@@ -15,6 +15,9 @@ const ICON_USERS = `
   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
 `;
 
+// RF-11: `citiesVisitedCount` puede ser `null` (stadiums aún pendiente, ver crossStadiumsIntoMatches
+// en itineraryService.js) — en ese caso el contador queda en "—" hasta que markStadiumsResolvedForCards
+// lo actualice, en vez de animar desde 0 y mentir sobre un dato que todavía no se conoce.
 export const renderItineraryCards = (container, teamName, teamFlag, { matches, citiesVisitedCount }) => {
   container.innerHTML = `
     <div class="flex flex-wrap items-start justify-between gap-4 mt-6 mb-6">
@@ -24,7 +27,7 @@ export const renderItineraryCards = (container, teamName, teamFlag, { matches, c
       </div>
       <div class="text-right">
         <p class="body-sm text-text-secondary">${t('itinerary.citiesVisited')}</p>
-        <p class="font-display font-extrabold text-4xl bg-gradient-accent bg-clip-text text-transparent" data-cities-count>0</p>
+        <p class="font-display font-extrabold text-4xl bg-gradient-accent bg-clip-text text-transparent" data-cities-count>${citiesVisitedCount === null ? '—' : 0}</p>
       </div>
     </div>
 
@@ -33,7 +36,9 @@ export const renderItineraryCards = (container, teamName, teamFlag, { matches, c
     </div>
   `;
   releaseCardEnterClass(container);
-  animateCountUp(container.querySelector('[data-cities-count]'), citiesVisitedCount);
+  if (citiesVisitedCount !== null) {
+    animateCountUp(container.querySelector('[data-cities-count]'), citiesVisitedCount);
+  }
 };
 
 // `animation-fill-mode: both` deja el transform del último frame por encima del
@@ -74,7 +79,13 @@ const renderCardHtml = (match, indice) => `
   </article>
 `;
 
+// `stadium === undefined` → aún no se pidió /get/stadiums (estado pendiente del primer render,
+// ver buildItineraryMatches). `stadium === null` → se pidió y no hay dato para ese partido
+// (fallo de la petición, o el id no cruzó contra ningún estadio).
 const renderStadiumFieldsHtml = (stadium) => {
+  if (stadium === undefined) {
+    return `<p class="flex items-center gap-2 text-text-secondary italic"><span>${ICON_LANDMARK}</span>${t('itinerary.stadiumLoading')}</p>`;
+  }
   if (!stadium) {
     return `<p class="flex items-center gap-2 text-text-secondary italic"><span>${ICON_LANDMARK}</span>${t('itinerary.stadiumUnavailable')}</p>`;
   }
@@ -94,4 +105,19 @@ export const markStadiumsUnavailableForCards = (container, matchIds) => {
       camposEstadio.innerHTML = renderStadiumFieldsHtml(null);
     }
   });
+};
+
+// Actualización PARCIAL (RF-11), caso de éxito: /get/stadiums resolvió después del render
+// inicial de las tarjetas — parcha [data-stadium-fields] de cada partido con su estadio real
+// (o "Estadio no disponible" si ese partido puntual no cruzó contra ningún estadio) y anima
+// el contador de ciudades, que hasta este punto estaba en "—".
+export const markStadiumsResolvedForCards = (container, matches, citiesVisitedCount) => {
+  matches.forEach((match) => {
+    const tarjeta = container.querySelector(`article[data-match-id="${match.id}"]`);
+    const camposEstadio = tarjeta?.querySelector('[data-stadium-fields]');
+    if (camposEstadio) {
+      camposEstadio.innerHTML = renderStadiumFieldsHtml(match.stadium);
+    }
+  });
+  animateCountUp(container.querySelector('[data-cities-count]'), citiesVisitedCount);
 };

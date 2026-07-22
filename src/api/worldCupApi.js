@@ -96,10 +96,19 @@ export const getGames = async (banners) => fetchDatasetResiliente('games', '/get
 // capacity (viene como número, no string). Ver main.js para el aislamiento de
 // este fallo respecto a teams/games (RF-11): si stadiums falla sin caché, se
 // deja que el itinerario se renderice igual con stadium = null por partido.
-export const getStadiums = async (banners) => fetchDatasetResiliente('stadiums', '/get/stadiums', 'stadiums', banners);
+// TEMPORAL: contador de invocaciones reales (una por llamada a getStadiums, NO una por
+// reintento de backoff — los reintentos ocurren dentro de la misma invocación, en
+// fetchWithBackoff). Sirve para confirmar en consola si 2 mensajes de error idénticos
+// vienen de un solo ciclo de backoff o de 2 llamadas independientes (ej. La Ruta del
+// Campeón y Analítica de Estadios pidiendo stadiums por separado). Retirar una vez confirmado.
+let stadiumsInvocationCounter = 0;
+export const getStadiums = async (banners) => {
+  stadiumsInvocationCounter += 1;
+  console.debug(`[TEMP] getStadiums() — invocación #${stadiumsInvocationCounter}`);
+  return fetchDatasetResiliente('stadiums', '/get/stadiums', 'stadiums', banners);
+};
 
-// SOLO DESARROLLO. Base compartida por simulateRateLimit/simulateRateLimitRecovery
-// (429) y simulateServerError (500): usa fetch() real a /dev-mock/<status>
+// SOLO DESARROLLO. Base compartida por simulateServerError (500): usa fetch() real a /dev-mock/<status>
 // (no un ApiError sintético) para que Network muestre status/headers/body
 // reales y el backoff/countdown sea 100% el código de producción.
 // `failCount` (default Infinity) controla cuántos intentos fallan antes de
@@ -145,91 +154,16 @@ const simulateApiError = async (status, datasetCacheKey, banners, { failCount = 
   }
 };
 
-// SOLO DESARROLLO. La API de prueba cachea en HTTP por 30s la URL exacta sin
-// parámetros, así que sirve sin pasar por el rate limiter aunque el límite
-// real ya esté agotado — poco práctico disparar un 429 real para la demo.
-// Agota siempre los reintentos y cae a caché; ver simulateRateLimitRecovery
-// para el caso donde el backoff sí se recupera.
-// Para quitarlo: borrar esta función, el import de mountDevRateLimitSimulator y su línea en main.js.
-export const simulateRateLimit = (cacheKey = 'teams', banners) => simulateApiError(429, cacheKey, banners);
-
-// Igual que simulateRateLimit pero falla solo 2 intentos y el 3ro resuelve —
-// demuestra el caso donde el backoff SÍ se recupera.
-export const simulateRateLimitRecovery = (cacheKey = 'teams', banners) =>
-  simulateApiError(429, cacheKey, banners, { failCount: 2 });
-
 // SOLO DESARROLLO. La API de prueba no expone un endpoint de fallo controlado
-// para forzar un 500 real y repetible (mismo problema que simulateRateLimit).
+// para forzar un 500 real y repetible.
 // Para quitarlo: borrar esta función, el import de mountDevServerErrorSimulator y su línea en main.js.
 export const simulateServerError = (cacheKey = 'teams', banners) => simulateApiError(500, cacheKey, banners);
-
-// SOLO DESARROLLO. Reto RF-11 (CLAUDE.md 5.5): si /get/stadiums falla
-// DESPUÉS del render inicial, las tarjetas no deben desaparecer, solo su
-// campo de estadio. A diferencia de simulateServerError, esta función
-// SIEMPRE propaga el error a main.js (que aplica markStadiumsUnavailableForCards)
-// en vez de caer a caché — el punto es mostrar "Estadio no disponible", no el badge RF-10.
-// Para quitarlo: borrar esta función, el import de mountDevStadiumsFailureSimulator y sus líneas en main.js.
-export const simulateStadiumsFailureAfterRender = async (banners) => {
-  if (!import.meta.env.DEV) return;
-  try {
-    await conBackoffVisible('stadiums', () => fetchSimulatedError(500), banners);
-  } catch (error) {
-    banners.hideRateLimitBanner('stadiums');
-    banners.hideServerErrorBanner('stadiums');
-    console.debug('[resiliencia][DEV] simulación RF-11 — /get/stadiums falló tras el render inicial', {
-      nombre: error.name,
-      status: error.status,
-    });
-    throw error;
-  }
-};
-
-// SOLO DESARROLLO. Reto RF-RG-R (CLAUDE.md 6.2): fuerza que /get/teams falle en el
-// contexto puntual de renderRastreadorDeGoleadas, con /get/games ya resuelto. Igual que
-// simulateStadiumsFailureAfterRender, SIEMPRE propaga el error (nunca cae a caché) para que
-// main.js aplique el respaldo con ids crudos; el reintento en segundo plano que sigue usa
-// getTeams() real (contra la API real), lo que demuestra la recuperación automática completa.
-// Para quitarlo: borrar esta función, el import de mountDevTeamsFailureSimulator y sus líneas en main.js.
-export const simulateTeamsFailureAfterGamesResolved = async (banners) => {
-  if (!import.meta.env.DEV) return;
-  try {
-    await conBackoffVisible('teams', () => fetchSimulatedError(500), banners);
-  } catch (error) {
-    banners.hideRateLimitBanner('teams');
-    banners.hideServerErrorBanner('teams');
-    console.debug('[resiliencia][DEV] simulación RF-RG-R — /get/teams falló con /get/games ya resuelto', {
-      nombre: error.name,
-      status: error.status,
-    });
-    throw error;
-  }
-};
-
-// SOLO DESARROLLO. Reto RF-AE-R (requirements.md 11): fuerza que /get/games falle DESPUÉS
-// de que /get/stadiums ya resolvió y las barras de aforo ya se dibujaron. Igual que
-// simulateStadiumsFailureAfterRender, SIEMPRE propaga el error (nunca cae a caché) para que
-// main.js aplique markGamesUnavailableForStadiumsChart sobre las barras ya renderizadas.
-// Para quitarlo: borrar esta función, el import de mountDevGamesFailureSimulator y sus líneas en main.js.
-export const simulateGamesFailureAfterStadiumsResolved = async (banners) => {
-  if (!import.meta.env.DEV) return;
-  try {
-    await conBackoffVisible('games', () => fetchSimulatedError(500), banners);
-  } catch (error) {
-    banners.hideRateLimitBanner('games');
-    banners.hideServerErrorBanner('games');
-    console.debug('[resiliencia][DEV] simulación RF-AE-R — /get/games falló con /get/stadiums ya resuelto', {
-      nombre: error.name,
-      status: error.status,
-    });
-    throw error;
-  }
-};
 
 // SOLO DESARROLLO. Reto RF-RE-R (requirements.md 12): la matriz de Radar de Empates se
 // pinta grupo por grupo (ver renderDrawsMatrixShell/appendDrawsGroupSection en drawsMatrix.js);
 // esta función simula que, al llegar el turno del grupo pendiente, esa "petición" puntual
 // devuelve 429 `failCount` veces (con countdown vía conBackoffVisible) y luego se recupera —
-// igual que simulateRateLimitRecovery, pero con `source` namespaced por grupo
+// con `source` namespaced por grupo
 // (`draws-group:<letra>`) para que el backoff de un grupo nunca se mezcle con el de otro ni
 // con el de teams/games. Los grupos ya pintados antes de este punto no se tocan: main.js solo
 // llama a esto ANTES de invocar appendDrawsGroupSection para el grupo pendiente.

@@ -23,9 +23,11 @@ const resolveStadiumInfo = (stadiumId, stadiumsById) => {
   };
 };
 
-export const buildItinerary = (selectedTeamId, teams, games, stadiums) => {
+// RF-11: separado de crossStadiumsIntoMatches para que el itinerario pueda renderizarse con
+// equipos+partidos apenas resuelvan, sin esperar a /get/stadiums. `stadium` queda `undefined`
+// (pendiente) hasta que crossStadiumsIntoMatches lo resuelva.
+export const buildItineraryMatches = (selectedTeamId, teams, games) => {
   const teamsById = new Map(teams.map((team) => [team.id, team]));
-  const stadiumsById = new Map(stadiums.map((stadium) => [stadium.id, stadium]));
 
   const partidosDelEquipo = games.filter(
     (juego) => juego.home_team_id === selectedTeamId || juego.away_team_id === selectedTeamId
@@ -35,7 +37,7 @@ export const buildItinerary = (selectedTeamId, teams, games, stadiums) => {
     (a, b) => parseLocalDate(a.local_date) - parseLocalDate(b.local_date)
   );
 
-  const matches = partidosOrdenados.map((juego) => {
+  return partidosOrdenados.map((juego) => {
     const esLocal = juego.home_team_id === selectedTeamId;
     const rivalId = esLocal ? juego.away_team_id : juego.home_team_id;
     const rivalLabel = esLocal ? juego.away_team_label : juego.home_team_label;
@@ -48,16 +50,27 @@ export const buildItinerary = (selectedTeamId, teams, games, stadiums) => {
       group: juego.group,
       localDate: juego.local_date,
       stadiumId: juego.stadium_id,
-      stadium: resolveStadiumInfo(juego.stadium_id, stadiumsById),
     };
   });
+};
+
+// RF-11: cruza `stadiums` sobre matches ya construidos por buildItineraryMatches. Se llama
+// una vez que /get/stadiums resuelve (éxito o fallo con stadiums = []) — nunca antes, y nunca
+// vuelve a tocar `games`/`teams`, que ya están resueltos en el itinerario.
+export const crossStadiumsIntoMatches = (matches, stadiums) => {
+  const stadiumsById = new Map(stadiums.map((stadium) => [stadium.id, stadium]));
+
+  const matchesConEstadio = matches.map((match) => ({
+    ...match,
+    stadium: resolveStadiumInfo(match.stadiumId, stadiumsById),
+  }));
 
   const ciudadesDistintas = new Set(
-    matches.map((match) => match.stadium?.cityName).filter(Boolean)
+    matchesConEstadio.map((match) => match.stadium?.cityName).filter(Boolean)
   );
 
   return {
-    matches,
+    matches: matchesConEstadio,
     citiesVisitedCount: ciudadesDistintas.size,
   };
 };

@@ -1,32 +1,21 @@
 // SOLO DESARROLLO. Agrupa los simuladores en un botón flotante único.
 // Mapa de atajos Ctrl+Shift+<tecla> — mantener esta lista al día al agregar un simulador nuevo,
 // cada mount*Simulator registra su propio listener de keydown y NO valida colisiones entre sí:
-//   E → 401 (sesión expirada)              R → 429 (agota reintentos)
-//   T → 429 (recupera al 3er intento)      S → 500 (servidor)
-//   D → RF-11  fallo estadios (2.1 La Ruta del Campeón)
-//   G → RF-RG-R fallo equipos (2.2 Rastreador de Goleadas)
-//   A → RF-AE-R fallo partidos (2.4 Analítica de Estadios, "Analítica")
+//   E → 401 (sesión expirada)              S → 500 (servidor)
 //   Q → RF-RE-R 429 a mitad de matriz (2.5 Radar de Empates) — NO se usó "M" (Matriz) a
 //       propósito: El Muro (2.3) también empieza con M y hubiera chocado con Q más adelante.
 //   W → RF-EM-R fallo próximo rival de 1 de 5 equipos (2.3 El Muro, de "Wall") — se evitó "M"
 //       por la razón de arriba.
+// (429 agota/recupera, RF-11 estadios, RF-RG-R equipos y RF-AE-R partidos se retiraron:
+// requirements.md sección 17 los confirmó 100% reproducibles manualmente vía DevTools.)
 import { mountDevSessionSimulator } from './devSessionSimulator.js';
-import { mountDevRateLimitSimulator } from './devRateLimitSimulator.js';
 import { mountDevServerErrorSimulator } from './devServerErrorSimulator.js';
-import { mountDevStadiumsFailureSimulator } from './devStadiumsFailureSimulator.js';
-import { mountDevTeamsFailureSimulator } from './devTeamsFailureSimulator.js';
-import { mountDevGamesFailureSimulator } from './devGamesFailureSimulator.js';
 import { mountDevDrawsGroupFailureSimulator } from './devDrawsGroupFailureSimulator.js';
 import { mountDevWallFailureSimulator } from './devWallFailureSimulator.js';
 
 export const mountDevToolsPanel = ({
   trigger401,
-  trigger429Agota,
-  trigger429Recupera,
   trigger500,
-  triggerFalloEstadios,
-  triggerFalloEquipos,
-  triggerFalloPartidosEstadios,
   triggerFallo429Matriz,
   triggerFalloRivalMuro,
 }) => {
@@ -93,13 +82,13 @@ export const mountDevToolsPanel = ({
   });
 
   mountDevSessionSimulator(trigger401, panel);
-  mountDevRateLimitSimulator(trigger429Agota, trigger429Recupera, panel);
   mountDevServerErrorSimulator(trigger500, panel);
 
   // Retos de resiliencia específicos de cada subproyecto (sección 5.5/6.2 de CLAUDE.md):
-  // separados visualmente de los simuladores genéricos de arriba, y cada botón lleva el
-  // prefijo del subproyecto en su propia etiqueta para no confundirlos al ir agregando
-  // los de El Muro, Analítica de Estadios y Radar de Empates.
+  // separados visualmente de los simuladores genéricos de arriba. Solo quedan El Muro
+  // (RF-EM-R) y Radar de Empates (RF-RE-R) — son los únicos que el profesor autorizó
+  // conservar como excepción en requirements.md sección 17, por no ser reproducibles
+  // manualmente vía DevTools.
   const separador = document.createElement('div');
   separador.className = 'border-t border-white/[0.12] my-1';
   panel.appendChild(separador);
@@ -109,9 +98,6 @@ export const mountDevToolsPanel = ({
   tituloRetos.className = 'body-sm text-white/60 px-1 pb-1';
   panel.appendChild(tituloRetos);
 
-  mountDevStadiumsFailureSimulator(triggerFalloEstadios, panel);
-  mountDevTeamsFailureSimulator(triggerFalloEquipos, panel);
   mountDevWallFailureSimulator(triggerFalloRivalMuro, panel);
-  mountDevGamesFailureSimulator(triggerFalloPartidosEstadios, panel);
   mountDevDrawsGroupFailureSimulator(triggerFallo429Matriz, panel);
 };

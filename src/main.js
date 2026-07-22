@@ -5,7 +5,7 @@ import { ApiError } from './api/httpClient.js';
 import { renderLoginScreen } from './ui/loginForm.js';
 import { renderNavbar } from './ui/navbar.js';
 import { renderTeamSelector } from './ui/teamSelector.js';
-import { renderItineraryCards, markStadiumsUnavailableForCards } from './ui/itineraryCards.js';
+import { renderItineraryCards, markStadiumsUnavailableForCards, markStadiumsResolvedForCards } from './ui/itineraryCards.js';
 import { renderGoalsList, patchTeamNamesForCards } from './ui/goalsList.js';
 import { renderWallRanking } from './ui/wallRanking.js';
 import { renderStadiumsChart, markGamesUnavailableForStadiumsChart } from './ui/stadiumsChart.js';
@@ -24,17 +24,12 @@ import {
   getTeams,
   getGames,
   getStadiums,
-  simulateRateLimit,
-  simulateRateLimitRecovery,
   simulateServerError,
-  simulateStadiumsFailureAfterRender,
-  simulateTeamsFailureAfterGamesResolved,
-  simulateGamesFailureAfterStadiumsResolved,
   simulateDrawsGroupRateLimit,
   simulateSessionExpired,
 } from './api/worldCupApi.js';
 import { getGroups } from './api/groupsApi.js';
-import { buildItinerary } from './domain/itineraryService.js';
+import { buildItineraryMatches, crossStadiumsIntoMatches } from './domain/itineraryService.js';
 import { buildGoalsList, reconcileGoalsListWithTeams } from './domain/goalsService.js';
 import { buildWallRanking } from './domain/wallService.js';
 import { buildStadiumsAnalytics, buildStadiumsBaseline } from './domain/stadiumsAnalyticsService.js';
@@ -64,13 +59,6 @@ const manejarSesionExpirada = () => {
   showSessionExpiredModal({ onReauthenticated: iniciarApp });
 };
 
-// El simulador RF-11 usa esto para aplicar la actualización parcial sin volver a pedir /get/games.
-let currentMatchIds = [];
-
-// RF-RG-R: fuerza que la próxima carga de Rastreador de Goleadas trate /get/teams como fallido
-// (se consume una sola vez); ver renderRastreadorDeGoleadas.
-let forzarFalloTeamsEnGoleadas = false;
-
 // RF-RE-R: fuerza que, en la próxima construcción incremental de la matriz de Radar de
 // Empates, el primer grupo pintado DESPUÉS de esta letra (alfabéticamente) trate su turno
 // como un 429 (se consume una sola vez); ver renderRadarDeEmpates.
@@ -89,32 +77,7 @@ mountDevToolsPanel({
     await simulateSessionExpired();
     manejarSesionExpirada();
   },
-  trigger429Agota: () => simulateRateLimit('teams', banners),
-  trigger429Recupera: () => simulateRateLimitRecovery('teams', banners),
   trigger500: () => simulateServerError('teams', banners),
-  triggerFalloEstadios: async () => {
-    if (currentMatchIds.length === 0) return;
-    try {
-      await simulateStadiumsFailureAfterRender(banners);
-    } catch (error) {
-      markStadiumsUnavailableForCards(app.querySelector('#itinerary-slot'), currentMatchIds);
-    }
-  },
-  triggerFalloEquipos: () => {
-    forzarFalloTeamsEnGoleadas = true;
-    if (vistaActiva === 'rastreador-de-goleadas') {
-      renderRastreadorDeGoleadas(app.querySelector('#view-slot'));
-    }
-  },
-  triggerFalloPartidosEstadios: async () => {
-    const chartSlot = app.querySelector('#stadiums-chart-slot');
-    if (!chartSlot) return;
-    try {
-      await simulateGamesFailureAfterStadiumsResolved(banners);
-    } catch (error) {
-      markGamesUnavailableForStadiumsChart(chartSlot);
-    }
-  },
   triggerFallo429Matriz: () => {
     // RF-RE-R: se consume una sola vez, sobre la siguiente construcción de la matriz —
     // ver forzar429DespuesDeGrupo en renderRadarDeEmpates.
@@ -298,25 +261,46 @@ const renderRutaDelCampeon = async (container) => {
     return;
   }
 
-  // RF-11: si stadiums falla sin caché, seguimos con array vacío (itineraryService contempla stadium: null).
-  let stadiums = [];
-  try {
-    stadiums = await getStadiums(banners);
-  } catch (error) {
-    if (error instanceof ApiError && error.status === 401) {
-      manejarSesionExpirada();
-      return;
-    }
-    console.error('Fallo al cargar stadiums (sin caché disponible):', error);
-  }
-  if (!Array.isArray(stadiums)) stadiums = [];
+  // RF-11: se pide UNA sola vez por carga de esta vista (compartida entre selecciones de
+  // equipo vía closure) y se dispara sin esperarla — el itinerario se renderiza con
+  // teams/games apenas el usuario elige equipo, dejando el campo de estadio en estado
+  // "pendiente" (ver buildItineraryMatches). Solo cuando esta promesa resuelve (éxito o
+  // fallo) se parchan las tarjetas ya visibles, sin volver a pedir games ni re-renderizar
+  // la lista completa.
+  const stadiumsPromise = getStadiums(banners);
+
+  // Si el usuario cambia de equipo antes de que stadiumsPromise resuelva, este contador
+  // permite ignorar el parche cuando ya no corresponde a la selección visible.
+  let seleccionActual = 0;
 
   renderTeamSelector(selectorSlot, teams, {
-    onTeamSelected: (selectedTeamId) => {
+    onTeamSelected: async (selectedTeamId) => {
+      const miSeleccion = ++seleccionActual;
       const equipoSeleccionado = teams.find((team) => team.id === selectedTeamId);
-      const itinerario = buildItinerary(selectedTeamId, teams, games, stadiums);
-      currentMatchIds = itinerario.matches.map((match) => match.id);
-      renderItineraryCards(itinerarySlot, equipoSeleccionado.name_en, equipoSeleccionado.flag, itinerario);
+      const matches = buildItineraryMatches(selectedTeamId, teams, games);
+      renderItineraryCards(itinerarySlot, equipoSeleccionado.name_en, equipoSeleccionado.flag, {
+        matches,
+        citiesVisitedCount: null,
+      });
+
+      let stadiums;
+      try {
+        stadiums = await stadiumsPromise;
+      } catch (error) {
+        if (miSeleccion !== seleccionActual) return;
+        if (error instanceof ApiError && error.status === 401) {
+          manejarSesionExpirada();
+          return;
+        }
+        console.error('Fallo al cargar stadiums (sin caché disponible):', error);
+        markStadiumsUnavailableForCards(itinerarySlot, matches.map((match) => match.id));
+        return;
+      }
+      if (miSeleccion !== seleccionActual) return;
+      if (!Array.isArray(stadiums)) stadiums = [];
+
+      const itinerarioConEstadios = crossStadiumsIntoMatches(matches, stadiums);
+      markStadiumsResolvedForCards(itinerarySlot, itinerarioConEstadios.matches, itinerarioConEstadios.citiesVisitedCount);
     },
   });
 };
@@ -330,8 +314,8 @@ const renderRastreadorDeGoleadas = async (container) => {
   const goalsSlot = container.querySelector('#goals-slot');
 
   // Si ambos ya están en memoria (ej. se visitó primero La Ruta del Campeón) se reutilizan
-  // sin re-pedirlos — salvo que el simulador dev esté forzando el escenario RF-RG-R.
-  if (teamsYGamesEnMemoria && !forzarFalloTeamsEnGoleadas) {
+  // sin re-pedirlos.
+  if (teamsYGamesEnMemoria) {
     const goleadas = buildGoalsList(teamsYGamesEnMemoria.games, teamsYGamesEnMemoria.teams);
     currentGoleadasMatches = goleadas.matches;
     renderGoalsList(goalsSlot, goleadas);
@@ -356,10 +340,6 @@ const renderRastreadorDeGoleadas = async (container) => {
 
   let teams = null;
   try {
-    if (forzarFalloTeamsEnGoleadas) {
-      forzarFalloTeamsEnGoleadas = false;
-      await simulateTeamsFailureAfterGamesResolved(banners); // SOLO DEV: siempre lanza.
-    }
     teams = await getTeams(banners);
     if (!Array.isArray(teams)) throw new Error('Respuesta inesperada de /get/teams');
     teamsYGamesEnMemoria = { teams, games };
@@ -486,7 +466,7 @@ const renderRadarDeEmpates = async (container) => {
     if (!yaSimuloFallo && letraLimiteFallo && group.group > letraLimiteFallo) {
       yaSimuloFallo = true;
       // failCount: 4 (no el default de 1) para que el countdown sea demostrable con calma en
-      // la defensa oral (1s→2s→4s→8s, mismo patrón que simulateRateLimit) — no altera el
+      // la defensa oral (1s→2s→4s→8s, mismo patrón de backoff) — no altera el
       // comportamiento funcional real ante un 429 genuino, solo la duración de esta demo.
       await simulateDrawsGroupRateLimit(group.group, banners, { failCount: 4 });
       // El usuario pudo haber cambiado de vista mientras el countdown corría.

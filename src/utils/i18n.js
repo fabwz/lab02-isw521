@@ -71,6 +71,7 @@ const DICTIONARY = {
   'itinerary.selectTeam': { es: 'Selecciona un equipo', en: 'Select a team' },
   'itinerary.chooseTeam': { es: 'Elige un equipo', en: 'Choose a team' },
   'itinerary.stadiumUnavailable': { es: 'Estadio no disponible', en: 'Stadium unavailable' },
+  'itinerary.stadiumLoading': { es: 'Cargando estadio…', en: 'Loading stadium…' },
 
   // 2.2 Rastreador de Goleadas
   'goals.title': { es: 'Rastreador de Goleadas', en: 'Blowout Tracker' },
