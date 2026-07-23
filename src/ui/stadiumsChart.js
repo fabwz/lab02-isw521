@@ -6,10 +6,6 @@ const ICON_USERS = `
   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
 `;
 
-// RF-AE-04: gráfica de barras construida a mano (sin librerías), dos barras por estadio
-// (capacidad vs. partidos albergados), cada una normalizada contra el máximo de su propio
-// dataset — capacidad y cantidad de partidos viven en escalas muy distintas (decenas de miles
-// vs. unidades), así que normalizarlas juntas dejaría la barra de partidos invisible.
 const formatNumber = (numero) => numero.toLocaleString('es-CR');
 
 const renderBarRow = ({ label, value, maxValue, gradientClass }) => {
@@ -25,10 +21,7 @@ const renderBarRow = ({ label, value, maxValue, gradientClass }) => {
   `;
 };
 
-// RF-AE-R: mientras /get/games no ha resuelto (gameCount === null), la fila de partidos
-// se pinta como "esperando" en vez de asumir 0 — así no se confunde con un estadio que
-// de verdad no albergó ningún partido. `data-games-row` es el gancho que
-// markGamesUnavailableForStadiumsChart usa para actualizar esta fila sin re-renderizar la tarjeta.
+// gameCount === null: /get/games aún no resuelve, distinto de "0 partidos".
 const renderGamesRow = (stadium, maxGameCount) => {
   if (stadium.gameCount === null) {
     return `
@@ -108,9 +101,7 @@ export const renderStadiumsChart = (container, { stadiums }) => {
   });
 };
 
-// `animation-fill-mode: both` deja el transform del último frame por encima del hover de
-// .ticket-card sin importar especificidad, así que hay que quitar la clase al terminar
-// (mismo patrón que itineraryCards.js/goalsList.js/wallRanking.js).
+// Se quita la clase al terminar la animación: fill-mode "both" dejaría el transform final activo sobre el hover.
 const releaseCardEnterClass = (container) => {
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   container.querySelectorAll('.card-enter').forEach((tarjeta) => {
@@ -124,10 +115,7 @@ const releaseCardEnterClass = (container) => {
   });
 };
 
-// RF-AE-R: cuando /get/games falla DESPUÉS de que las barras de aforo ya se dibujaron
-// (renderStadiumsChart con buildStadiumsBaseline), esta función solo actualiza la fila de
-// "Partidos" de cada tarjeta a un estado de fallo — nunca re-renderiza ni destruye la
-// grilla completa. Mismo patrón incremental que markStadiumsUnavailableForCards (RF-11).
+// RF-AE-R: solo actualiza la fila de partidos, sin re-renderizar la grilla completa.
 export const markGamesUnavailableForStadiumsChart = (container) => {
   const filas = container.querySelectorAll('[data-games-row][data-games-status="pending"]');
   filas.forEach((fila) => {

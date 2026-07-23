@@ -25,9 +25,6 @@ const fetchConTimeout = async (url, options, externalSignal) => {
   const controlador = new AbortController();
   const timeoutId = setTimeout(() => controlador.abort(), REQUEST_TIMEOUT_MS);
 
-  // `externalSignal` deja que el llamador cancele esta petición desde afuera (ej. loginForm.js
-  // aborta el intento de login anterior cuando el usuario reintenta) sin duplicar la lógica de
-  // timeout: solo se reenvía el abort() hacia el controlador interno.
   const abortarPorSenalExterna = () => controlador.abort();
   if (externalSignal) {
     if (externalSignal.aborted) controlador.abort();
@@ -87,9 +84,7 @@ export const publicFetch = async (path, body, { signal } = {}) => {
   });
 };
 
-// SOLO DESARROLLO. httpstat.us (servicio externo) resultó poco confiable en
-// pruebas (ERR_EMPTY_RESPONSE intermitente); /dev-mock/* es un middleware
-// local del dev server (vite.config.js) que no sale a internet.
+// SOLO DESARROLLO. Ver context/api-reference.md sobre por qué no se usa httpstat.us.
 const DEV_MOCK_BASE_URL = '/dev-mock';
 
 export const fetchSimulatedError = async (status) => {

@@ -46,11 +46,7 @@ const renderTeamHtml = (name, flag) => `
   </span>
 `;
 
-// 3 estados normales del torneo (verificados con datos reales, ver wallService.js):
-// resuelto (rival real), eliminado (sin partido pendiente) o pendiente de bracket
-// (hay partido pero el rival aún no está asignado, ej. Final), más 'failed': fallo técnico
-// puntual de la búsqueda de próximo rival de ESE equipo (RF-EM-R) — "Próximo rival no
-// disponible" se reserva exclusivamente para este caso, nunca para los otros 3.
+// matchStatus: 'resolved' | 'eliminated' | 'pending-bracket' | 'failed' (RF-EM-R, ver wallService.js).
 const renderNextOpponentHtml = (entrada) => {
   if (entrada.matchStatus === 'failed') {
     return `<p class="text-text-secondary italic">${t('wall.nextOpponentUnavailable')}</p>`;

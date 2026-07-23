@@ -2,8 +2,6 @@ import { authFetch, ApiError } from './httpClient.js';
 import { getToken, setCachedData, getCachedData } from '../state/appState.js';
 import { fetchWithBackoff } from '../utils/backoff.js';
 
-// Mismo patrón que worldCupApi.js (RF-EM-01 a 04): backoff visible + caché por dataset.
-// `banners`: callbacks de ui/resilienceBanners.js inyectados por main.js.
 const conBackoffVisible = (source, peticion, banners) => {
   let ultimoStatus = null;
 
@@ -24,10 +22,7 @@ const conBackoffVisible = (source, peticion, banners) => {
   });
 };
 
-// getGroups: GET /get/groups — a diferencia de teams/games/stadiums, la respuesta viene
-// envuelta en { groups: [...] } en vez de un array directo (ver api-reference.md), por eso
-// no se reutiliza fetchDatasetResiliente de worldCupApi.js tal cual: aquí se extrae el
-// array antes de cachearlo/devolverlo.
+// GET /get/groups — respuesta envuelta en { groups: [...] }, ver api-reference.md.
 export const getGroups = async (banners) => {
   const cacheKey = 'groups';
   try {

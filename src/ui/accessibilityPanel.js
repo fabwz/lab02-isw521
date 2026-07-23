@@ -1,9 +1,6 @@
 import { FONT_SCALE_LEVELS, getStoredFontScaleLevel, setFontScaleLevel } from '../utils/fontScale.js';
 import { LANGUAGES, getStoredLanguage, setLanguage, t } from '../utils/i18n.js';
 
-// RF-A11Y-03/RF-A11Y-01: sección "Accesibilidad" dentro del dropdown de cuenta (accountMenu.js) —
-// no un botón flotante nuevo. Control de tamaño de texto (A-/A/A+) y toggle de idioma (ES/EN),
-// uno junto al otro, independientes entre sí (cambiar uno no afecta al otro).
 const LABEL_BY_LEVEL = {
   reducido: 'A-',
   normal: 'A',
@@ -63,9 +60,6 @@ export const renderAccessibilityPanel = (container) => {
     boton.addEventListener('click', () => {
       const idioma = boton.dataset.language;
       if (idioma === getStoredLanguage()) return;
-      // setLanguage notifica a los suscriptores (main.js) para re-renderizar navbar + vista
-      // activa con el nuevo idioma de inmediato — este panel también se vuelve a pintar como
-      // parte de ese re-render de la navbar, así que no hace falta parchear los botones aquí.
       setLanguage(idioma);
     });
   });

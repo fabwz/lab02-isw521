@@ -27,8 +27,7 @@ export const renderGoalsList = (container, { matches, totalCount }) => {
   animateCountUp(container.querySelector('[data-goals-count]'), totalCount);
 };
 
-// `animation-fill-mode: both` deja el transform del último frame por encima del
-// hover de .ticket-card sin importar especificidad, así que hay que quitar la clase al terminar.
+// Se quita la clase al terminar: fill-mode "both" dejaría el transform final activo sobre el hover.
 const releaseCardEnterClass = (container) => {
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   container.querySelectorAll('.card-enter').forEach((tarjeta) => {
@@ -42,8 +41,6 @@ const releaseCardEnterClass = (container) => {
   });
 };
 
-// `role` ("home"/"away") queda como data attribute para que patchTeamNamesForCards
-// (RF-RG-R) pueda ubicar y reemplazar solo ese span cuando /get/teams llega tarde.
 const renderTeamHtml = (name, flag, role) => `
   <span class="flex items-center gap-2" data-team="${role}">
     ${flag ? `<img src="${escapeHtml(flag)}" alt="" class="w-5 h-5 rounded-full object-cover shrink-0" />` : ''}
@@ -83,8 +80,6 @@ const renderCardHtml = (match, indice) => `
   </article>
 `;
 
-// Actualización PARCIAL (RF-RG-R, mismo patrón que markStadiumsUnavailableForCards de RF-11):
-// solo reemplaza los spans [data-team] de cada tarjeta ya renderizada, nunca container.innerHTML completo.
 export const patchTeamNamesForCards = (container, matches) => {
   matches.forEach((match) => {
     const tarjeta = container.querySelector(`article[data-match-id="${match.id}"]`);

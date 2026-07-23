@@ -1,18 +1,9 @@
 import { animateCountUp, escapeHtml } from '../utils/format.js';
 import { t } from '../utils/i18n.js';
 
-// RF-RE-03/04: matriz visual de empates agrupada por grupo, con contador por grupo.
-// RF-RE-R: la matriz se pinta de forma INCREMENTAL (grupo por grupo, ver renderDrawsMatrixShell +
-// appendDrawsGroupSection), nunca de un solo golpe — así un 429 a mitad de la secuencia puede
-// dejar ver los grupos ya pintados sin destruirlos, en vez de re-renderizar toda la matriz.
-
-// Índice global de tarjetas de empate ya pintadas, usado para escalonar su animation-delay
-// (card-enter) de forma continua a través de los grupos agregados incrementalmente. Se
-// reinicia en cada llamada a renderDrawsMatrixShell (nueva construcción de la matriz).
+// RF-RE-R: la matriz se pinta grupo por grupo vía appendDrawsGroupSection, nunca de un solo golpe.
 let indiceGlobalDeTarjeta = 0;
 
-// Pinta el encabezado (título + contador total) y deja el contenedor de grupos vacío, listo
-// para recibir secciones una por una vía appendDrawsGroupSection.
 export const renderDrawsMatrixShell = (container, totalCount) => {
   indiceGlobalDeTarjeta = 0;
   container.innerHTML = `
@@ -76,9 +67,7 @@ const renderDrawCellHtml = (draw, indice) => `
   </article>
 `;
 
-// `animation-fill-mode: both` deja el transform del último frame por encima del hover de
-// .ticket-card sin importar especificidad, así que hay que quitar la clase al terminar
-// (mismo patrón que itineraryCards.js/goalsList.js/wallRanking.js).
+// Se quita la clase al terminar: fill-mode "both" dejaría el transform final activo sobre el hover.
 const releaseCardEnterClass = (seccion) => {
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   seccion.querySelectorAll('.card-enter').forEach((tarjeta) => {
@@ -92,8 +81,6 @@ const releaseCardEnterClass = (seccion) => {
   });
 };
 
-// RF-RE-R: agrega UN grupo al contenedor ya existente, sin tocar los grupos ya pintados.
-// `groupsSlot` es el nodo `#draws-groups-slot` devuelto por renderDrawsMatrixShell.
 export const appendDrawsGroupSection = (groupsSlot, group) => {
   groupsSlot.insertAdjacentHTML('beforeend', renderGroupSectionHtml(group));
   releaseCardEnterClass(groupsSlot.lastElementChild);

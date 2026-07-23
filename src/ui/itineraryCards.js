@@ -15,9 +15,7 @@ const ICON_USERS = `
   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
 `;
 
-// RF-11: `citiesVisitedCount` puede ser `null` (stadiums aún pendiente, ver crossStadiumsIntoMatches
-// en itineraryService.js) — en ese caso el contador queda en "—" hasta que markStadiumsResolvedForCards
-// lo actualice, en vez de animar desde 0 y mentir sobre un dato que todavía no se conoce.
+// citiesVisitedCount === null: stadiums aún pendiente, se muestra "—" hasta markStadiumsResolvedForCards.
 export const renderItineraryCards = (container, teamName, teamFlag, { matches, citiesVisitedCount }) => {
   container.innerHTML = `
     <div class="flex flex-wrap items-start justify-between gap-4 mt-6 mb-6">
@@ -41,8 +39,7 @@ export const renderItineraryCards = (container, teamName, teamFlag, { matches, c
   }
 };
 
-// `animation-fill-mode: both` deja el transform del último frame por encima del
-// hover de .ticket-card sin importar especificidad, así que hay que quitar la clase al terminar.
+// Se quita la clase al terminar: fill-mode "both" dejaría el transform final activo sobre el hover.
 const releaseCardEnterClass = (container) => {
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   container.querySelectorAll('.card-enter').forEach((tarjeta) => {
@@ -79,9 +76,7 @@ const renderCardHtml = (match, indice) => `
   </article>
 `;
 
-// `stadium === undefined` → aún no se pidió /get/stadiums (estado pendiente del primer render,
-// ver buildItineraryMatches). `stadium === null` → se pidió y no hay dato para ese partido
-// (fallo de la petición, o el id no cruzó contra ningún estadio).
+// undefined: /get/stadiums aún no se pidió. null: se pidió pero sin dato para ese partido.
 const renderStadiumFieldsHtml = (stadium) => {
   if (stadium === undefined) {
     return `<p class="flex items-center gap-2 text-text-secondary italic"><span>${ICON_LANDMARK}</span>${t('itinerary.stadiumLoading')}</p>`;
@@ -96,7 +91,6 @@ const renderStadiumFieldsHtml = (stadium) => {
   `;
 };
 
-// Actualización PARCIAL (RF-11): solo reemplaza [data-stadium-fields], nunca container.innerHTML completo.
 export const markStadiumsUnavailableForCards = (container, matchIds) => {
   matchIds.forEach((matchId) => {
     const tarjeta = container.querySelector(`article[data-match-id="${matchId}"]`);
@@ -107,10 +101,6 @@ export const markStadiumsUnavailableForCards = (container, matchIds) => {
   });
 };
 
-// Actualización PARCIAL (RF-11), caso de éxito: /get/stadiums resolvió después del render
-// inicial de las tarjetas — parcha [data-stadium-fields] de cada partido con su estadio real
-// (o "Estadio no disponible" si ese partido puntual no cruzó contra ningún estadio) y anima
-// el contador de ciudades, que hasta este punto estaba en "—".
 export const markStadiumsResolvedForCards = (container, matches, citiesVisitedCount) => {
   matches.forEach((match) => {
     const tarjeta = container.querySelector(`article[data-match-id="${match.id}"]`);

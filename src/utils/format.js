@@ -1,7 +1,4 @@
-// Sección 16 (context/requirements.md): defensa XSS para todo texto proveniente de la API
-// (worldcup26.ir) que se interpola dentro de un template de innerHTML. No se traduce ni
-// se usa para textos fijos generados por la app, solo para datos externos (nombres de
-// equipo/estadio, ciudad/país, fechas, URLs de bandera, etc.).
+// Defensa XSS (requirements.md 16) para texto de la API interpolado en innerHTML.
 const HTML_ESCAPE_MAP = {
   '&': '&amp;',
   '<': '&lt;',
@@ -29,10 +26,6 @@ export const formatGroupLabel = (group) => {
   return ROUND_LABELS[group] ?? `Grupo ${escapeHtml(group)}`;
 };
 
-// Conteo animado (0 → targetValue) para los números destacados de cada vista (ciudades
-// visitadas, empates encontrados, total de goleadas, asistencia potencial). Reusada por las
-// 5 vistas en vez de duplicar la lógica de conteo en cada una. Respeta prefers-reduced-motion
-// mostrando el valor final de una vez, igual que el resto de animaciones del proyecto.
 export const animateCountUp = (element, targetValue, { duration = 500 } = {}) => {
   if (!element) return;
 

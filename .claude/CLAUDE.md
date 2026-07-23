@@ -275,10 +275,12 @@ Detalle funcional completo en `context/requirements.md` secciones 9-12. Aquí so
 ## 7. Convenciones de código
 
 - Nombrado de funciones en inglés, comentarios y mensajes de UI en español (idioma del curso/defensa).
-- Cada función exportada de `/api` debe tener un comentario breve explicando qué hace y qué errores puede lanzar.
-- Evitar "código mágico" generado sin explicación: cada bloque no trivial (especialmente backoff, manejo de 401, cruce de datos) debe tener comentarios que permitan al estudiante explicarlo en la defensa oral.
 - Preferir funciones puras y pequeñas sobre funciones largas que mezclen fetch + lógica + DOM.
 - Nombres de variables descriptivos relacionados al dominio (`selectedTeamId`, `stadiumsById`, `retryCount`), no genéricos (`data`, `temp`, `x`).
+- **Comentarios: mínimos, no explicativos.** Rúbrica sección 5, "Defensa con Criterio Propio": un comentario que narra la lógica paso a paso le permite al estudiante "leer la explicación" en vez de defenderla oralmente con sus propias palabras, y eso resta puntos. Nombres de función/variable ya explican el qué; la defensa oral explica el porqué.
+  - No escribir bloques de varias líneas narrando qué hace el código, ni historiales de investigación/decisiones de diseño extensos — esa información vive en `context/api-reference.md` y `context/requirements.md`; en el código alcanza una referencia de una línea si acaso.
+  - Sí conservar advertencias cortas de una línea sobre comportamiento no obvio que rompería algo si se cambia sin saberlo (ej. un campo que llega como string y no number).
+  - No usar comentarios de encabezado de sección que solo repiten lo que ya dice el nombre de la función.
 
 ---
 

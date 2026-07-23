@@ -1,9 +1,6 @@
 import { t } from '../utils/i18n.js';
 
-// teams/games/stadiums se piden en paralelo y cada uno corre su propio
-// backoff: un `hide` global podía borrar el chip de otro dataset que seguía
-// reintentando, así que cada show/hide recibe un `source` y el chip solo se
-// retira cuando ningún source activo lo sigue necesitando.
+// Cada show/hide recibe un `source`: el chip solo se retira cuando ningún source activo lo sigue necesitando.
 let contenedorBanners = null;
 const getContenedor = () => {
   if (contenedorBanners) return contenedorBanners;

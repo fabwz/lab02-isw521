@@ -36,8 +36,6 @@ import { buildStadiumsAnalytics, buildStadiumsBaseline } from './domain/stadiums
 import { buildDrawsRadar } from './domain/drawsService.js';
 import { getProjectName } from './ui/projectMenu.js';
 
-// worldCupApi.js no conoce la UI: main.js inyecta estos callbacks (RF-09/RF-10)
-// en cada llamada a getTeams/getGames/getStadiums/simulate* — ver worldCupApi.js.
 const banners = {
   showRateLimitBanner,
   hideRateLimitBanner,
@@ -59,17 +57,10 @@ const manejarSesionExpirada = () => {
   showSessionExpiredModal({ onReauthenticated: iniciarApp });
 };
 
-// RF-RE-R: fuerza que, en la próxima construcción incremental de la matriz de Radar de
-// Empates, el primer grupo pintado DESPUÉS de esta letra (alfabéticamente) trate su turno
-// como un 429 (se consume una sola vez); ver renderRadarDeEmpates.
+// RF-RE-R: se consume una sola vez; ver renderRadarDeEmpates.
 let forzar429DespuesDeGrupo = null;
 
-// RF-EM-R: fuerza que, en la próxima construcción del ranking de El Muro, la búsqueda de
-// próximo rival del equipo en esta posición del top 5 (0-4) falle, sin afectar a los otros
-// 4 (se consume una sola vez); ver renderElMuro y buildWallRanking. El dataset real de
-// worldcup26.ir tiene hoy los 5 equipos del ranking en estado 'eliminated' (sin próximo
-// partido pendiente), así que este fallo no se puede demostrar con un fetch real — se fuerza
-// sobre el cálculo de búsqueda en sí, dentro de wallService.js.
+// RF-EM-R: se consume una sola vez; ver renderElMuro y buildWallRanking.
 let forzarFalloRivalIndice = null;
 
 mountDevToolsPanel({
@@ -79,17 +70,12 @@ mountDevToolsPanel({
   },
   trigger500: () => simulateServerError('teams', banners),
   triggerFallo429Matriz: () => {
-    // RF-RE-R: se consume una sola vez, sobre la siguiente construcción de la matriz —
-    // ver forzar429DespuesDeGrupo en renderRadarDeEmpates.
     forzar429DespuesDeGrupo = 'F';
     if (vistaActiva === 'radar-de-empates') {
       renderRadarDeEmpates(app.querySelector('#view-slot'));
     }
   },
   triggerFalloRivalMuro: () => {
-    // RF-EM-R: se consume una sola vez, sobre el siguiente ranking construido — falla la
-    // búsqueda del equipo en la posición 2 (3ro de 5, valor arbitrario) para dejar ver que
-    // los otros 4 registros no se ven afectados; ver forzarFalloRivalIndice en renderElMuro.
     forzarFalloRivalIndice = 2;
     if (vistaActiva === 'el-muro') {
       renderElMuro(app.querySelector('#view-slot'));
@@ -97,20 +83,10 @@ mountDevToolsPanel({
   },
 });
 
-// Vista activa entre los 5 subproyectos (sin librería de router, switch de estado + render condicional).
 let vistaActiva = 'ruta-del-campeon';
 
-// Referencia al closure `seleccionarProyecto` de iniciarApp() (se reasigna cada vez que corre),
-// para que el suscriptor de cambio de idioma (más abajo) pueda reconstruir la navbar con el
-// mismo callback de navegación sin duplicar su lógica.
 let seleccionarProyectoActual = null;
 
-// Fallback de resiliencia para fallos de CARGA DE DATOS (401 ya se maneja aparte, vía
-// manejarSesionExpirada). Antes, estos catch hacían clearAuth() + renderLoginScreen() como si
-// fuera un problema de sesión — pero el token seguía siendo válido, solo falló /get/teams o
-// /get/games sin caché disponible. Eso forzaba al usuario a reautenticarse una y otra vez sin
-// que el fallo real (de red/API) se resolviera, produciendo un loop de login. Este estado
-// mantiene la sesión activa, explica el fallo y deja reintentar sin perder contexto.
 const renderDataLoadErrorState = (container, { onRetry }) => {
   container.innerHTML = `
     <div class="glass rounded-[20px] p-8 flex flex-col items-center gap-4 text-center max-w-md mx-auto">
@@ -136,24 +112,15 @@ const renderVistaEnConstruccion = (container, proyectoId) => {
   `;
 };
 
-// teams/games se comparten entre subproyectos (2.1 y 2.2 por ahora) para no duplicar la petición
-// si ya están en memoria desde la infraestructura compartida.
 let teamsYGamesEnMemoria = null;
 
 const obtenerTeamsYGames = async () => {
   if (teamsYGamesEnMemoria) return teamsYGamesEnMemoria;
 
-  // allSettled (no all): los 3 subproyectos que usan esta función necesitan AMBOS datasets
-  // para cruzar datos (a diferencia de Goleadas, que sí puede degradar con ids crudos — ver
-  // RF-RG-R más abajo), así que un fallo de cualquiera de los dos sigue bloqueando la vista.
-  // La ganancia de allSettled sobre all es diagnóstica: distinguir cuál de los dos falló
-  // para un mensaje claro, y no perder la excepción 401 del otro si ambos fallan a la vez.
   const [teamsResultado, gamesResultado] = await Promise.allSettled([getTeams(banners), getGames(banners)]);
 
   if (teamsResultado.status === 'rejected' || gamesResultado.status === 'rejected') {
     const fallos = [teamsResultado, gamesResultado].filter((resultado) => resultado.status === 'rejected');
-    // Si hubo un 401 se prioriza sobre cualquier otro fallo: es el único caso que dispara
-    // el modal de sesión expirada en vez del estado de error genérico (ver catch en cada vista).
     const fallo401 = fallos.find((resultado) => resultado.reason instanceof ApiError && resultado.reason.status === 401);
     if (fallo401) throw fallo401.reason;
 
@@ -165,7 +132,6 @@ const obtenerTeamsYGames = async () => {
   const teams = teamsResultado.value;
   const games = gamesResultado.value;
 
-  // La API puede devolver 200 con un cuerpo que no es el array esperado (token corrupto no rechazado con 401).
   if (!Array.isArray(teams) || !Array.isArray(games)) {
     console.error('Respuesta inesperada de la API (se esperaba un array):', { teams, games });
     throw new Error('Respuesta inesperada de teams/games');
@@ -175,17 +141,11 @@ const obtenerTeamsYGames = async () => {
   return teamsYGamesEnMemoria;
 };
 
-// stadiums/games se comparten con la infraestructura ya en memoria (2.1 puede haber pedido
-// stadiums, 2.1/2.2 pueden haber pedido games) para no duplicar peticiones ya resueltas.
 let stadiumsEnMemoria = null;
 let gamesParaAnaliticaEnMemoria = null;
 
-// RF-AE-R (requirements.md 11): stadiums y games se piden en orden controlado, no en
-// Promise.all — si games fallara sin que stadiums ya haya resuelto, no habría barras que
-// preservar. Al pedir stadiums primero y renderizar sus barras de aforo (RF-AE-01/02
-// pendientes de conteo) antes de tocar games, un fallo posterior de games nunca puede
-// destruir lo ya dibujado: solo actualiza la fila de partidos vía
-// markGamesUnavailableForStadiumsChart, sin re-renderizar la grilla completa.
+// RF-AE-R: stadiums se pide y renderiza primero para que un fallo posterior de games
+// nunca destruya las barras ya dibujadas (solo actualiza vía markGamesUnavailableForStadiumsChart).
 const renderAnaliticaDeEstadios = async (container) => {
   container.innerHTML = '<div id="stadiums-chart-slot"></div>';
   const chartSlot = container.querySelector('#stadiums-chart-slot');
@@ -261,20 +221,10 @@ const renderRutaDelCampeon = async (container) => {
     return;
   }
 
-  // RF-11: se pide UNA sola vez por carga de esta vista (compartida entre selecciones de
-  // equipo vía closure) y se dispara sin esperarla — el itinerario se renderiza con
-  // teams/games apenas el usuario elige equipo, dejando el campo de estadio en estado
-  // "pendiente" (ver buildItineraryMatches). Solo cuando esta promesa resuelve (éxito o
-  // fallo) se parchan las tarjetas ya visibles, sin volver a pedir games ni re-renderizar
-  // la lista completa.
-  // Si `stadiumsEnMemoria` ya tiene datos (esta vista u otra —p. ej. Analítica de Estadios—
-  // ya los resolvió antes en esta misma sesión), se reutilizan sin volver a pedir /get/stadiums;
-  // así ambas vistas comparten un único caché en memoria en vez de disparar cada una su propio
-  // ciclo de backoff contra el mismo endpoint.
+  // RF-11: se pide una sola vez por carga de vista; las tarjetas se parchan al resolver, sin re-renderizar la lista completa.
   const stadiumsPromise = stadiumsEnMemoria ? Promise.resolve(stadiumsEnMemoria) : getStadiums(banners);
 
-  // Si el usuario cambia de equipo antes de que stadiumsPromise resuelva, este contador
-  // permite ignorar el parche cuando ya no corresponde a la selección visible.
+  // Descarta el parche si el usuario ya cambió de equipo antes de que stadiumsPromise resuelva.
   let seleccionActual = 0;
 
   renderTeamSelector(selectorSlot, teams, {
@@ -302,8 +252,6 @@ const renderRutaDelCampeon = async (container) => {
       }
       if (miSeleccion !== seleccionActual) return;
       if (!Array.isArray(stadiums)) stadiums = [];
-      // Solo se cachea en éxito: si falla, stadiumsEnMemoria queda como estaba (null o el
-      // último dato válido) para que el próximo intento —esta vista u otra— vuelva a pedirlo.
       stadiumsEnMemoria = stadiums;
 
       const itinerarioConEstadios = crossStadiumsIntoMatches(matches, stadiums);
@@ -312,16 +260,12 @@ const renderRutaDelCampeon = async (container) => {
   });
 };
 
-// RF-RG-R usa esto para volver a cruzar ids con nombres reales cuando /get/teams se
-// recupera en segundo plano, sobre la misma vista ya renderizada.
 let currentGoleadasMatches = [];
 
 const renderRastreadorDeGoleadas = async (container) => {
   container.innerHTML = '<div id="goals-slot"></div>';
   const goalsSlot = container.querySelector('#goals-slot');
 
-  // Si ambos ya están en memoria (ej. se visitó primero La Ruta del Campeón) se reutilizan
-  // sin re-pedirlos.
   if (teamsYGamesEnMemoria) {
     const goleadas = buildGoalsList(teamsYGamesEnMemoria.games, teamsYGamesEnMemoria.teams);
     currentGoleadasMatches = goleadas.matches;
@@ -329,8 +273,7 @@ const renderRastreadorDeGoleadas = async (container) => {
     return;
   }
 
-  // RF-RG-R: games y teams se piden por separado (no Promise.all) para que un fallo
-  // aislado de /get/teams no bloquee la vista si /get/games ya respondió.
+  // RF-RG-R: games y teams se piden por separado para que un fallo de teams no bloquee la vista.
   let games;
   try {
     games = await getGames(banners);
@@ -355,7 +298,6 @@ const renderRastreadorDeGoleadas = async (container) => {
       manejarSesionExpirada();
       return;
     }
-    // Degradación RF-RG-R: sin caché de teams no se bloquea la vista, se sigue con ids crudos.
     console.error('Fallo al cargar teams (RF-RG-R: se muestran ids crudos y se reintenta en segundo plano):', error);
     teams = null;
   }
@@ -369,9 +311,7 @@ const renderRastreadorDeGoleadas = async (container) => {
   }
 };
 
-// RF-RG-R: reintenta /get/teams en segundo plano (getTeams ya usa fetchWithBackoff
-// internamente vía fetchDatasetResiliente) y, si se recupera, parchea solo los nombres/banderas
-// de las tarjetas ya renderizadas — sin volver a pedir /get/games ni recargar la página.
+// RF-RG-R: reintenta /get/teams en segundo plano y parchea solo nombres/banderas de las tarjetas ya renderizadas.
 const reintentarTeamsParaGoleadas = async (goalsSlot, games) => {
   try {
     const teamsRecuperados = await getTeams(banners);
@@ -379,7 +319,6 @@ const reintentarTeamsParaGoleadas = async (goalsSlot, games) => {
 
     teamsYGamesEnMemoria = { teams: teamsRecuperados, games };
 
-    // El usuario pudo haber cambiado de vista mientras el backoff seguía en curso.
     if (!goalsSlot.isConnected) return;
 
     currentGoleadasMatches = reconcileGoalsListWithTeams(currentGoleadasMatches, teamsRecuperados);
@@ -390,8 +329,6 @@ const reintentarTeamsParaGoleadas = async (goalsSlot, games) => {
   }
 };
 
-// 2.3 El Muro: reutiliza teams/games ya en memoria (mismo patrón que 2.1/2.2/2.5) vía
-// obtenerTeamsYGames(), y pide /get/groups aparte (solo lo consume este subproyecto).
 const renderElMuro = async (container) => {
   container.innerHTML = '<div id="wall-slot"></div>';
   const wallSlot = container.querySelector('#wall-slot');
@@ -424,7 +361,6 @@ const renderElMuro = async (container) => {
     return;
   }
 
-  // RF-EM-R: se consume una sola vez, sin importar si esta vista termina de pintar.
   const indiceFallo = forzarFalloRivalIndice;
   forzarFalloRivalIndice = null;
 
@@ -432,15 +368,8 @@ const renderElMuro = async (container) => {
   renderWallRanking(wallSlot, { ranking });
 };
 
-// 2.5 Radar de Empates: reutiliza teams+games ya en memoria (mismo patrón que 2.1/2.2)
-// vía obtenerTeamsYGames(), sin duplicar peticiones.
-// RF-RE-R: la matriz se pinta grupo por grupo (renderDrawsMatrixShell + appendDrawsGroupSection
-// en drawsMatrix.js) con una pequeña pausa entre cada uno — nunca de un solo golpe. Si
-// forzar429DespuesDeGrupo está activo (solo vía simulador dev), el primer grupo pintado
-// después de esa letra pasa primero por simulateDrawsGroupRateLimit: esa "petición" puntual
-// entra en backoff con countdown visible SOLO para ese grupo, mientras los grupos ya
-// agregados al DOM antes de este punto permanecen intactos (nunca se re-renderiza la matriz
-// completa). Al resolverse el countdown, el loop continúa pintando el resto con normalidad.
+// RF-RE-R: la matriz se pinta grupo por grupo, nunca de un solo golpe; un 429 forzado en un
+// grupo entra en backoff sin afectar los grupos ya agregados al DOM.
 const PAUSA_ENTRE_GRUPOS_MS = 250;
 const espera = (delayMs) => new Promise((resolve) => setTimeout(resolve, delayMs));
 
@@ -466,17 +395,13 @@ const renderRadarDeEmpates = async (container) => {
   const groupsSlot = container.querySelector('#draws-groups-slot');
 
   const letraLimiteFallo = forzar429DespuesDeGrupo;
-  forzar429DespuesDeGrupo = null; // se consume una sola vez, sin importar si esta vista termina de pintar
+  forzar429DespuesDeGrupo = null;
   let yaSimuloFallo = false;
 
   for (const group of groups) {
     if (!yaSimuloFallo && letraLimiteFallo && group.group > letraLimiteFallo) {
       yaSimuloFallo = true;
-      // failCount: 4 (no el default de 1) para que el countdown sea demostrable con calma en
-      // la defensa oral (1s→2s→4s→8s, mismo patrón de backoff) — no altera el
-      // comportamiento funcional real ante un 429 genuino, solo la duración de esta demo.
       await simulateDrawsGroupRateLimit(group.group, banners, { failCount: 4 });
-      // El usuario pudo haber cambiado de vista mientras el countdown corría.
       if (!groupsSlot.isConnected) return;
     }
 
@@ -512,9 +437,6 @@ const iniciarApp = async () => {
   const viewSlot = app.querySelector('#view-slot');
   const navbarSlot = app.querySelector('#navbar-slot');
 
-  // Transición entre subproyectos (DESIGN.md sección 6): fade-out breve de la vista saliente
-  // antes de reemplazar el contenido, fade-in de la entrante — nunca un cambio instantáneo.
-  // Se desactiva junto con el resto del motion bajo prefers-reduced-motion.
   const seleccionarProyecto = async (proyectoId) => {
     if (proyectoId === vistaActiva) return;
     vistaActiva = proyectoId;
@@ -552,16 +474,9 @@ const iniciarApp = async () => {
   await renderVistaActiva(viewSlot);
 };
 
-// RF-A11Y-01: se aplica antes de renderizar nada (mismo momento que initFontScale) para que
-// no haya parpadeo de idioma cuando ya hay una preferencia guardada en localStorage.
 initI18n();
 
-// RF-A11Y-01: cambiar el idioma desde accessibilityPanel.js debe re-renderizar de inmediato
-// la navbar (nombres de proyecto, cuenta) y la vista actualmente activa — sin recargar la
-// página ni requerir que el usuario cambie de vista manualmente. Solo aplica cuando la app ya
-// está montada (hay sesión iniciada); en la pantalla de login, renderLoginScreen no está
-// suscrita aquí porque el usuario puede volver a togglear el idioma desde el login mismo la
-// próxima vez que main.js corra, y no hay estado de vista que preservar antes de autenticarse.
+// RF-A11Y-01: re-renderiza navbar y vista activa al cambiar idioma; solo aplica con sesión iniciada.
 onLanguageChange(async () => {
   if (!isAuthenticated()) return;
   const navbarSlot = app.querySelector('#navbar-slot');
@@ -575,8 +490,6 @@ onLanguageChange(async () => {
   await renderVistaActiva(viewSlot);
 });
 
-// RF-A11Y-03: se aplica antes de renderizar nada (login o app) para que no haya parpadeo
-// visible de "normal" a "ajustado" cuando ya hay una preferencia guardada en localStorage.
 initFontScale();
 
 if (isAuthenticated()) {

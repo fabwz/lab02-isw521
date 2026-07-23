@@ -1,16 +1,12 @@
-// Letras de grupo válidas para fase de grupos (RF-RE-02): el campo `group` de /get/games
-// trae código de ronda eliminatoria (R32, QF, ...) para partidos de eliminatorias, que no
-// aplican a una matriz agrupada por grupo.
+// group llega como código de ronda eliminatoria (R32, QF, ...) fuera de fase de grupos.
 const GROUP_LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
 
 const resolveTeamName = (teamId, teamsById) => teamsById.get(teamId)?.name_en ?? teamId;
 const resolveTeamFlag = (teamId, teamsById) => teamsById.get(teamId)?.flag ?? null;
 
-// RF-RE-01 a RF-RE-04: filtra empates finalizados de fase de grupos y los agrupa por `group`.
 export const buildDrawsRadar = (games, teams) => {
   const teamsById = new Map(teams.map((team) => [team.id, team]));
 
-  // finished/home_score/away_score llegan como string desde /get/games (mismo cuidado que en RF-RG-01/02).
   const empates = games.filter(
     (juego) =>
       juego.finished === 'TRUE' &&

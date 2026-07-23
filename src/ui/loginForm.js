@@ -2,8 +2,6 @@ import { login } from '../domain/authService.js';
 import { ApiError } from '../api/httpClient.js';
 import { t } from '../utils/i18n.js';
 
-// Traduce el status HTTP a un mensaje de error para el usuario, sin jerga
-// técnica ("token", "JWT", etc. quedan fuera de la UI).
 const mensajeError = (error) => {
   if (!(error instanceof ApiError)) {
     return t('login.error.network');
@@ -20,9 +18,7 @@ const mensajeError = (error) => {
   return t('login.error.unexpected');
 };
 
-// Se reutiliza tal cual dentro del modal de sesión expirada (RF-08).
-// `alertMessage` va DENTRO de esta misma tarjeta glass (no una tarjeta aparte
-// encima) para evitar el doble blur/borde de dos superficies glass apiladas.
+// alertMessage va dentro de esta misma tarjeta glass para evitar doble blur/borde apilado.
 export const renderLoginForm = (container, { onSuccess, subtitle, alertMessage } = {}) => {
   const clasesBorde = alertMessage ? 'border-t-2 border-t-alert' : '';
 
@@ -97,9 +93,6 @@ export const renderLoginForm = (container, { onSuccess, subtitle, alertMessage }
     parrafo.classList.add('hidden');
   };
 
-  // Validación explícita en JS previa al fetch: type="email" ya da una verificación
-  // básica del navegador, pero se refuerza aquí para evitar peticiones innecesarias
-  // (ver context/requirements.md sección 16, medida 3).
   const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
   const validarFormulario = () => {
@@ -122,9 +115,7 @@ export const renderLoginForm = (container, { onSuccess, subtitle, alertMessage }
     return esValido;
   };
 
-  // Controlador de la petición de login en curso: si el usuario reintenta antes de que la
-  // anterior termine (ej. quedó colgada por una conexión bloqueada), se aborta en vez de
-  // dejarla viva junto a la nueva — evita acumular peticiones sin cancelar entre reintentos.
+  // Si el usuario reintenta antes de que el login anterior termine, se aborta en vez de acumularlo.
   let loginEnCurso = null;
 
   formulario.addEventListener('submit', async (evento) => {

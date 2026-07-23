@@ -43,9 +43,7 @@ export const buildGoalsList = (games, teams) => {
   };
 };
 
-// RF-RG-R: recalcula nombre/bandera reales sobre una lista de matches YA construida
-// (con buildGoalsList) cuando /get/teams llega tarde por el reintento en segundo plano.
-// Llamable sobre el mismo resultado base sin volver a pedir /get/games.
+// RF-RG-R: recalcula nombre/bandera sobre matches ya construidos, sin volver a pedir /get/games.
 export const reconcileGoalsListWithTeams = (matches, teams) => {
   const teamsById = new Map(teams.map((team) => [team.id, team]));
   return matches.map((match) => ({

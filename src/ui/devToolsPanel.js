@@ -1,13 +1,6 @@
-// SOLO DESARROLLO. Agrupa los simuladores en un botón flotante único.
-// Mapa de atajos Ctrl+Shift+<tecla> — mantener esta lista al día al agregar un simulador nuevo,
-// cada mount*Simulator registra su propio listener de keydown y NO valida colisiones entre sí:
-//   E → 401 (sesión expirada)              S → 500 (servidor)
-//   Q → RF-RE-R 429 a mitad de matriz (2.5 Radar de Empates) — NO se usó "M" (Matriz) a
-//       propósito: El Muro (2.3) también empieza con M y hubiera chocado con Q más adelante.
-//   W → RF-EM-R fallo próximo rival de 1 de 5 equipos (2.3 El Muro, de "Wall") — se evitó "M"
-//       por la razón de arriba.
-// (429 agota/recupera, RF-11 estadios, RF-RG-R equipos y RF-AE-R partidos se retiraron:
-// requirements.md sección 17 los confirmó 100% reproducibles manualmente vía DevTools.)
+// SOLO DESARROLLO.
+// Atajos Ctrl+Shift+<tecla>:
+//   E → 401     S → 500     Q → RF-RE-R (Radar de Empates)     W → RF-EM-R (El Muro)
 import { mountDevSessionSimulator } from './devSessionSimulator.js';
 import { mountDevServerErrorSimulator } from './devServerErrorSimulator.js';
 import { mountDevDrawsGroupFailureSimulator } from './devDrawsGroupFailureSimulator.js';
@@ -23,7 +16,6 @@ export const mountDevToolsPanel = ({
 
   const boton = document.createElement('button');
   boton.type = 'button';
-  // Ícono "settings" de Lucide, SVG inline estático (CLAUDE.md 2).
   boton.innerHTML =
     '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" ' +
     'fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
@@ -84,11 +76,6 @@ export const mountDevToolsPanel = ({
   mountDevSessionSimulator(trigger401, panel);
   mountDevServerErrorSimulator(trigger500, panel);
 
-  // Retos de resiliencia específicos de cada subproyecto (sección 5.5/6.2 de CLAUDE.md):
-  // separados visualmente de los simuladores genéricos de arriba. Solo quedan El Muro
-  // (RF-EM-R) y Radar de Empates (RF-RE-R) — son los únicos que el profesor autorizó
-  // conservar como excepción en requirements.md sección 17, por no ser reproducibles
-  // manualmente vía DevTools.
   const separador = document.createElement('div');
   separador.className = 'border-t border-white/[0.12] my-1';
   panel.appendChild(separador);

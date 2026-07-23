@@ -1,23 +1,14 @@
-// RF-A11Y-01: idioma de página (Español/Inglés) para todo el "chrome" de texto construido
-// por la app (labels, botones, mensajes de error/resiliencia, los 5 subproyectos). Los datos
-// que vienen de la API (nombres de equipos, estadios, ciudades — ya en inglés por naturaleza,
-// ej. name_en) NUNCA pasan por aquí, se muestran tal cual llegan.
-//
-// Mismo patrón que utils/fontScale.js: preferencia en localStorage, aplicada al cargar antes
-// de renderizar nada (sin parpadeo), con una función de traducción por clave en vez de
-// literales sueltos por archivo.
 export const LANGUAGE_STORAGE_KEY = 'a11y:language';
 
 export const LANGUAGES = ['es', 'en'];
 
-// RF-A11Y-01: <html lang="..."> debe reflejar "es-CR" para español (no solo "es").
 const HTML_LANG_BY_LANGUAGE = {
   es: 'es-CR',
   en: 'en',
 };
 
 const DICTIONARY = {
-  // Login (loginForm.js) — compartido por pantalla completa (RF-06) y modal de sesión expirada (RF-08)
+  // loginForm.js
   'login.title': { es: 'Iniciar sesión', en: 'Log in' },
   'login.email': { es: 'Correo', en: 'Email' },
   'login.emailPlaceholder': { es: 'tu@correo.com', en: 'you@email.com' },
@@ -45,8 +36,7 @@ const DICTIONARY = {
   'a11y.textSizeLabel': { es: 'Tamaño de texto', en: 'Text size' },
   'a11y.languageLabel': { es: 'Idioma', en: 'Language' },
 
-  // projectMenu.js — nombres oficiales del catálogo (RF-07 sección 7 de requirements.md): no se
-  // abrevian ni renombran para trazabilidad directa con el enunciado, pero sí se traducen.
+  // projectMenu.js
   'project.rutaDelCampeon': { es: 'La Ruta del Campeón', en: "The Champion's Route" },
   'project.rastreadorDeGoleadas': { es: 'Rastreador de Goleadas', en: 'Blowout Tracker' },
   'project.elMuro': { es: 'El Muro', en: 'The Wall' },
@@ -105,7 +95,6 @@ const DICTIONARY = {
   'draws.count.one': { es: 'empate', en: 'draw' },
   'draws.count.other': { es: 'empates', en: 'draws' },
 
-  // vs. compartido (goals/itinerary usan "vs" literal en template, se deja fijo por ser abreviatura universal)
 };
 
 export const getStoredLanguage = () => {
@@ -113,8 +102,6 @@ export const getStoredLanguage = () => {
   return LANGUAGES.includes(idiomaGuardado) ? idiomaGuardado : 'es';
 };
 
-// Suscriptores notificados cada vez que el idioma cambia, para que main.js pueda re-renderizar
-// la navbar y la vista activa sin recargar la página (ver setLanguage).
 const suscriptores = new Set();
 
 export const onLanguageChange = (callback) => {
@@ -132,14 +119,10 @@ export const setLanguage = (idioma) => {
   suscriptores.forEach((callback) => callback(idioma));
 };
 
-// Llamado desde main.js antes de renderizar cualquier vista (mismo momento que initFontScale),
-// para que no haya parpadeo de idioma al recargar con una preferencia ya guardada.
 export const initI18n = () => {
   applyLanguage(getStoredLanguage());
 };
 
-// Traduce una clave del diccionario al idioma activo. Si la clave no existe, se devuelve la
-// clave misma (nunca undefined) para que un olvido de traducción sea visible en vez de romper la UI.
 export const t = (key) => {
   const entrada = DICTIONARY[key];
   if (!entrada) {

@@ -1,6 +1,4 @@
-// SOLO DESARROLLO. Fuerza un 429 sobre el siguiente grupo pendiente mientras la matriz de
-// Radar de Empates se está pintando grupo por grupo (RF-RE-R) — los grupos ya dibujados antes
-// del punto de fallo deben permanecer visibles e intactos.
+// SOLO DESARROLLO. RF-RE-R: fuerza un 429 sobre el siguiente grupo pendiente de la matriz.
 export const mountDevDrawsGroupFailureSimulator = (trigger, container) => {
   if (!import.meta.env.DEV) return;
 
