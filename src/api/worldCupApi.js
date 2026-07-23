@@ -55,15 +55,6 @@ const fetchDatasetResiliente = async (cacheKey, path, responseKey, banners) => {
     banners.hideRateLimitBanner(cacheKey);
     banners.hideServerErrorBanner(cacheKey);
 
-    // TEMPORAL: confirma en Console si, al fallar, el error es un NetworkError
-    // (sin status → va directo a caché) o un ApiError con un status HTTP real
-    // (401/429/500/otro) — retirar una vez validado en vivo.
-    console.debug('[resiliencia] fetchDatasetResiliente — error final', {
-      cacheKey,
-      nombre: error.name,
-      status: error.status,
-    });
-
     if (error instanceof ApiError && error.status === 401) {
       throw error;
     }

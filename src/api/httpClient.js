@@ -37,9 +37,6 @@ const fetchConTimeout = async (url, options, externalSignal) => {
   try {
     return await fetch(url, { ...options, signal: controlador.signal });
   } catch (error) {
-    // TEMPORAL: confirma en Console si el error real es TypeError (sin conexión/DNS/CORS)
-    // o AbortError (timeout) — retirar una vez validado en vivo.
-    console.debug('[resiliencia] NetworkError — sin respuesta HTTP', { url, causaOriginal: error.name });
     throw new NetworkError('No se pudo conectar con el servidor', error);
   } finally {
     clearTimeout(timeoutId);
@@ -48,11 +45,6 @@ const fetchConTimeout = async (url, options, externalSignal) => {
 };
 
 const clasificarRespuesta = async (respuesta, mensajes) => {
-  if (respuesta.status !== 200) {
-    // TEMPORAL: confirma en Console que el status viene de una respuesta HTTP
-    // real, no de una NetworkError disfrazada — retirar una vez validado en vivo.
-    console.debug('[resiliencia] ApiError — respuesta HTTP real', { url: respuesta.url, status: respuesta.status });
-  }
   if (respuesta.status === 401) {
     throw new ApiError(401, mensajes[401]);
   }
