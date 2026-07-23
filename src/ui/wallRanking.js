@@ -46,10 +46,14 @@ const renderTeamHtml = (name, flag) => `
   </span>
 `;
 
-// matchStatus: 'resolved' | 'eliminated' | 'pending-bracket' | 'failed' (RF-EM-R, ver wallService.js).
+// matchStatus: 'resolved' | 'eliminated' | 'pending-bracket' | 'champion' | 'failed' (RF-EM-R, ver wallService.js).
 const renderNextOpponentHtml = (entrada) => {
   if (entrada.matchStatus === 'failed') {
     return `<p class="text-text-secondary italic">${t('wall.nextOpponentUnavailable')}</p>`;
+  }
+
+  if (entrada.matchStatus === 'champion') {
+    return `<p class="text-text-secondary italic">${t('wall.champion')}</p>`;
   }
 
   if (entrada.matchStatus === 'eliminated') {

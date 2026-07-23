@@ -35,3 +35,6 @@ desktop.ini
 
 # Archivos temporales de Antigravity/Claude Code (si genera algo local, ajustar si aplica)
 *.tmp
+
+# Guía de estudio personal para la defensa oral — no es entregable del proyecto
+defensa-guia.md

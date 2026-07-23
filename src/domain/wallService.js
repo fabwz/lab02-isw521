@@ -67,6 +67,18 @@ const translateBracketPlaceholder = (label) => {
   return 'Rival aún sin definir';
 };
 
+const FINAL_MATCH_ID = '104';
+
+// Sin próximo partido tras ganar la Final (id 104): el torneo terminó en la cima, no por eliminación.
+const wonFinal = (teamId, gamesById) => {
+  const final = gamesById.get(FINAL_MATCH_ID);
+  if (!final || final.finished !== 'TRUE') return false;
+
+  const ganoLocal = Number(final.home_score) > Number(final.away_score);
+  const campeonId = ganoLocal ? final.home_team_id : final.away_team_id;
+  return campeonId === teamId;
+};
+
 // RF-EM-R: simulateFailure (solo simulador dev) fuerza el error de esta búsqueda puntual.
 const resolveNextOpponent = (teamId, games, teamsById, gamesById, simulateFailure) => {
   if (simulateFailure) {
@@ -76,6 +88,9 @@ const resolveNextOpponent = (teamId, games, teamsById, gamesById, simulateFailur
   const proximoPartido = findNextMatch(teamId, games, gamesById);
 
   if (!proximoPartido) {
+    if (wonFinal(teamId, gamesById)) {
+      return { matchStatus: 'champion', nextOpponentName: null, nextOpponentFlag: null, nextMatchDate: null };
+    }
     return { matchStatus: 'eliminated', nextOpponentName: null, nextOpponentFlag: null, nextMatchDate: null };
   }
 
@@ -94,7 +109,7 @@ const resolveNextOpponent = (teamId, games, teamsById, gamesById, simulateFailur
   return { matchStatus: 'pending-bracket', nextOpponentName: translateBracketPlaceholder(nextOpponentLabel), nextOpponentFlag: null, nextMatchDate };
 };
 
-// matchStatus: 'resolved' | 'eliminated' | 'pending-bracket' | 'failed' (RF-EM-R, ver api-reference.md).
+// matchStatus: 'resolved' | 'eliminated' | 'pending-bracket' | 'champion' | 'failed' (RF-EM-R, ver api-reference.md).
 export const buildWallRanking = (groups, teams, games, { forcedFailureIndex = null } = {}) => {
   const teamsById = new Map(teams.map((team) => [team.id, team]));
   const gamesById = new Map(games.map((juego) => [juego.id, juego]));

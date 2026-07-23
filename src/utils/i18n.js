@@ -75,6 +75,7 @@ const DICTIONARY = {
   'wall.goalsAgainstAbbr': { es: 'GC', en: 'GA' },
   'wall.nextOpponentUnavailable': { es: 'Próximo rival no disponible', en: 'Next opponent unavailable' },
   'wall.eliminated': { es: 'Eliminado', en: 'Eliminated' },
+  'wall.champion': { es: 'Campeón del Mundial', en: 'World Cup Champion' },
   'wall.vs': { es: 'vs', en: 'vs' },
 
   // 2.4 Analítica de Estadios
