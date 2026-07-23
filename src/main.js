@@ -58,7 +58,11 @@ const manejarSesionExpirada = () => {
 };
 
 // RF-RE-R: se consume una sola vez; ver renderRadarDeEmpates.
-let forzar429DespuesDeGrupo = null;
+// Solo indica que el próximo render debe forzar el 429; el punto de corte real se
+// calcula sobre los grupos con empates que efectivamente existan (ver renderRadarDeEmpates) —
+// una letra fija (ej. 'F') es frágil porque los grupos con empates dependen de datos en vivo
+// y podrían no incluir ninguno hasta más allá de esa letra.
+let forzarFallo429Matriz = false;
 
 // RF-EM-R: se consume una sola vez; ver renderElMuro y buildWallRanking.
 let forzarFalloRivalIndice = null;
@@ -70,7 +74,7 @@ mountDevToolsPanel({
   },
   trigger500: () => simulateServerError('teams', banners),
   triggerFallo429Matriz: () => {
-    forzar429DespuesDeGrupo = 'F';
+    forzarFallo429Matriz = true;
     if (vistaActiva === 'radar-de-empates') {
       renderRadarDeEmpates(app.querySelector('#view-slot'));
     }
@@ -394,20 +398,31 @@ const renderRadarDeEmpates = async (container) => {
   renderDrawsMatrixShell(container, totalCount);
   const groupsSlot = container.querySelector('#draws-groups-slot');
 
-  const letraLimiteFallo = forzar429DespuesDeGrupo;
-  forzar429DespuesDeGrupo = null;
-  let yaSimuloFallo = false;
+  const debeSimularFallo = forzarFallo429Matriz;
+  forzarFallo429Matriz = false;
+  // Punto de corte calculado sobre los grupos con empates que sí van a pintarse: deja al
+  // menos un grupo pintado antes del fallo (y al menos uno pendiente después), sin asumir
+  // que una letra fija (ej. 'F') vaya a tener empates en los datos reales.
+  const indiceLimiteFallo = debeSimularFallo ? Math.max(1, Math.floor(groups.length / 2)) : -1;
 
-  for (const group of groups) {
-    if (!yaSimuloFallo && letraLimiteFallo && group.group > letraLimiteFallo) {
-      yaSimuloFallo = true;
-      await simulateDrawsGroupRateLimit(group.group, banners, { failCount: 4 });
-      if (!groupsSlot.isConnected) return;
+  // No se hace `await` de este bucle: renderRadarDeEmpates debe resolver apenas existe el
+  // shell, para que seleccionarProyecto (ver iniciarApp) quite la clase `is-hidden` del
+  // view-slot de inmediato. Si se esperara aquí, todo el pintado grupo por grupo (y el
+  // countdown del 429 simulado) ocurriría con el contenedor en opacity:0, y el usuario solo
+  // vería el resultado final de golpe cuando la transición de navegación terminara.
+  (async () => {
+    let yaSimuloFallo = false;
+    for (const [indice, group] of groups.entries()) {
+      if (!yaSimuloFallo && indice === indiceLimiteFallo) {
+        yaSimuloFallo = true;
+        await simulateDrawsGroupRateLimit(group.group, banners, { failCount: 4 });
+        if (!groupsSlot.isConnected) return;
+      }
+
+      appendDrawsGroupSection(groupsSlot, group);
+      await espera(PAUSA_ENTRE_GRUPOS_MS);
     }
-
-    appendDrawsGroupSection(groupsSlot, group);
-    await espera(PAUSA_ENTRE_GRUPOS_MS);
-  }
+  })();
 };
 
 const renderVistaActiva = async (viewSlot) => {

@@ -5,7 +5,7 @@ export const mountDevDrawsGroupFailureSimulator = (trigger, container) => {
   const boton = document.createElement('button');
   boton.type = 'button';
   boton.textContent = '2.5 Radar de Empates — Simular 429 a mitad de matriz (dev)';
-  boton.title = 'Atajo: Ctrl+Shift+Q — fuerza 429 tras el grupo F mientras se pinta la matriz grupo por grupo; RF-RE-R';
+  boton.title = 'Atajo: Ctrl+Shift+Q — fuerza 429 a mitad de la matriz mientras se pinta grupo por grupo; RF-RE-R';
   boton.className = container
     ? 'w-full text-left glass rounded-lg px-4 py-2 body-sm text-signal border border-signal/40 ' +
       'hover:bg-signal/10 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-signal focus-visible:outline-offset-2'
